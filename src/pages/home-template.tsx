@@ -1557,32 +1557,10 @@ export default function ConsumptionOrderPage() {
         }
     }, [history]);
 
-    // [BARU] Hapus data mock yang ID-nya dimulai dengan "ORD" (buatan sistem, bukan user)
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const savedHistory = localStorage.getItem('consumptionOrderHistory');
-            if (savedHistory) {
-                try {
-                    const parsed = JSON.parse(savedHistory);
-                    // Filter out mock data (ID dimulai dengan "ORD")
-                    const realUserOrders = parsed.filter((order: Order) => !order.id.startsWith('ORD'));
-                    
-                    // Jika ada data yang dihapus, update localStorage dan state
-                    if (realUserOrders.length !== parsed.length) {
-                        const convertedOrders = realUserOrders.map((order: Order) => ({
-                            ...order,
-                            tanggalPengiriman: new Date(order.tanggalPengiriman),
-                            tanggalPermintaan: new Date(order.tanggalPermintaan)
-                        }));
-                        setHistory(convertedOrders);
-                        localStorage.setItem('consumptionOrderHistory', JSON.stringify(realUserOrders));
-                    }
-                } catch (e) {
-                    console.error('Error cleaning mock data:', e);
-                }
-            }
-        }
-    }, []); // Hanya run sekali saat mount
+    // NOTE: Sebelumnya terdapat logic yang membersihkan data berdasarkan ID yang dimulai dengan "ORD".
+    // Itu menyebabkan pesanan yang dibuat oleh user (juga menggunakan prefix "ORD") ikut terhapus saat mount.
+    // Untuk menjaga persistensi riwayat user, blok pembersihan ini dihapus. Jika diperlukan pembersihan mock
+    // di masa depan, gunakan flag khusus atau pola ID yang berbeda (mis. "MOCK_...") untuk membedakan.
 
     useEffect(() => {
         let timer: NodeJS.Timeout;

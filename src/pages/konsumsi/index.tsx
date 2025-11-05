@@ -45,8 +45,7 @@ import {
     Activity,
     UserCheck,
     ChevronsUpDown,
-    Check,
-    MoreVertical
+    Check
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -61,7 +60,7 @@ import { DateRange } from "react-day-picker";
 // =========================================================================
 // 1. DEFINISI TIPE DATA DAN MOCK DATA
 // =========================================================================
-type OrderStatus = 'Pending' | 'Approved' | 'Rejected' | 'Draft';
+type OrderStatus = 'Pending' | 'Approved' | 'Rejected' | 'Draft' | 'Cancelled';
 
 interface ConsumptionItemData {
     jenisKonsumsi: string;
@@ -104,6 +103,8 @@ interface Order {
     tipeTamu: string; // [DIKEMBALIKAN]
     keterangan: string;
     items: ConsumptionItemData[]; // Tetap flat array
+    tanggalPembatalan?: Date; // [BARU] Tanggal ketika pesanan dibatalkan
+    alasanPembatalan?: string; // [BARU] Alasan pembatalan (opsional)
 }
 
 // [DIPERBAIKI] FormData sekarang menggunakan struktur grup yang baru
@@ -245,6 +246,8 @@ const getStatusDisplay = (status: OrderStatus) => {
             return { icon: Clock, text: 'Menunggu', color: 'text-amber-700 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30' };
         case 'Rejected':
             return { icon: XCircle, text: 'Ditolak', color: 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30' };
+        case 'Cancelled':
+            return { icon: XCircle, text: 'Dibatalkan', color: 'text-gray-700 bg-gray-100 dark:text-gray-400 dark:bg-gray-900/30' };
         default:
             return { icon: Clock, text: 'Draft', color: 'text-gray-700 bg-gray-100 dark:text-gray-400 dark:bg-gray-800' };
     }
@@ -362,7 +365,7 @@ const ConfettiCanvas = () => (
 );
 
 
-const OrderCard: React.FC<{ order: Order; onDelete: (order: Order) => void; onViewDetails: (order: Order) => void; }> = ({ order, onDelete, onViewDetails }) => {
+const OrderCard: React.FC<{ order: Order; onViewDetails: (order: Order) => void; }> = ({ order, onViewDetails }) => {
     const statusDisplay = getStatusDisplay(order.status);
     const StatusIcon = statusDisplay.icon;
     const dateFormatted = order.tanggalPengiriman.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -401,21 +404,12 @@ const OrderCard: React.FC<{ order: Order; onDelete: (order: Order) => void; onVi
                 >
                     Detail
                 </Button>
-                {order.status !== 'Approved' && (
-                     <ConfirmationPopover
-                        title="Anda Yakin?"
-                        description={`Pesanan dengan ID ${order.id} akan dihapus secara permanen.`}
-                        onConfirm={() => onDelete(order)}
-                    >
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-100 hover:text-red-600"><Trash2 className="h-4 w-4" /></Button>
-                    </ConfirmationPopover>
-                )}
             </CardFooter>
         </Card>
     );
 };
 
-const OrderListItem: React.FC<{ order: Order; onDelete: (order: Order) => void; onViewDetails: (order: Order) => void; }> = ({ order, onDelete, onViewDetails }) => {
+const OrderListItem: React.FC<{ order: Order; onViewDetails: (order: Order) => void; }> = ({ order, onViewDetails }) => {
     const statusDisplay = getStatusDisplay(order.status);
     const StatusIcon = statusDisplay.icon;
     const firstItem = order.items[0];
@@ -432,15 +426,7 @@ const OrderListItem: React.FC<{ order: Order; onDelete: (order: Order) => void; 
                     <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full", statusDisplay.color)}><StatusIcon className="h-3 w-3" />{statusDisplay.text}</span>
                     <Button size="sm" className="h-8 bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-900/60 dark:text-violet-300 dark:hover:bg-violet-900" onClick={() => onViewDetails(order)}
                     > Detail
-                    </Button> {order.status !== 'Approved' && (
-                        <ConfirmationPopover
-                            title="Anda Yakin?"
-                            description={`Pesanan dengan ID ${order.id} akan dihapus secara permanen.`}
-                            onConfirm={() => onDelete(order)}
-                        >
-                            <Button variant="secondary" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-100 hover:text-red-600" title="Hapus"><Trash2 className="h-4 w-4" /></Button>
-                        </ConfirmationPopover>
-                    )}
+                    </Button>
                 </div>
             </div>
         </Card>
@@ -452,13 +438,12 @@ const OrderListItem: React.FC<{ order: Order; onDelete: (order: Order) => void; 
 // =========================================================================
 interface OrderHistoryProps {
     history: Order[];
-    onDelete: (order: Order) => void;
     onViewDetails: (order: Order) => void;
     viewMode: 'grid' | 'list';
     totalHistoryCount: number; // [BARU] Total history tanpa filter
 }
 
-const OrderHistory: React.FC<OrderHistoryProps> = ({ history, onDelete, onViewDetails, viewMode, totalHistoryCount }) => {
+const OrderHistory: React.FC<OrderHistoryProps> = ({ history, onViewDetails, viewMode, totalHistoryCount }) => {
     return (
         <div className="w-full mt-4 min-h-[50vh]">
             {/* Tampilkan empty state jika tidak ada history ATAU tidak ada hasil yang ditampilkan */}
@@ -628,7 +613,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ history, onDelete, onViewDe
                   exit={{ opacity: 0, scale: 0.9 }} 
                   transition={{ duration: 0.2 }}
                 >
-                  <OrderCard order={order} onDelete={onDelete} onViewDetails={onViewDetails} />
+                  <OrderCard order={order} onViewDetails={onViewDetails} />
                 </motion.div>
               ))}
             </div>
@@ -643,7 +628,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ history, onDelete, onViewDe
                   exit={{ opacity: 0, x: -20 }} 
                   transition={{ duration: 0.2 }}
                 >
-                  <OrderListItem order={order} onDelete={onViewDetails} onViewDetails={onViewDetails} />
+                  <OrderListItem order={order} onViewDetails={onViewDetails} />
                 </motion.div>
               ))}
             </div>
@@ -1272,41 +1257,6 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
 // =========================================================================
 // 6. KOMPONEN DIALOG KONFIRMASI & DETAIL
 // =========================================================================
-const ConfirmationPopover: React.FC<{
-    children: React.ReactNode;
-    title: string;
-    description: string;
-    onConfirm: () => void;
-}> = ({ children, title, description, onConfirm }) => {
-    const [open, setOpen] = useState(false);
-
-    return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>{children}</PopoverTrigger>
-            <PopoverContent side="bottom" align="end" className="w-80 p-4 space-y-4 bg-white text-foreground rounded-md shadow-lg border border-gray-100">
-                <div className="space-y-1">
-                    <h4 className="font-semibold">{title}</h4>
-                    <p className="text-sm text-muted-foreground">{description}</p>
-                </div>
-                <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
-                        Batal
-                    </Button>
-                    <Button
-                        size="sm"
-                        className="text-white bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600"
-                        onClick={() => {
-                            onConfirm();
-                            setOpen(false);
-                        }}
-                    >
-                        Hapus
-                    </Button>
-                </div>
-            </PopoverContent>
-        </Popover>
-    );
-};
 
 const OrderDetailsDialog: React.FC<{ 
     order: Order | null; 
@@ -1343,6 +1293,16 @@ const OrderDetailsDialog: React.FC<{
             icon: order.status === 'Approved' ? CheckCircle : XCircle
         });
     }
+    
+    // [BARU] Tambahkan event pembatalan jika pesanan dibatalkan
+    if (order.status === 'Cancelled' && order.tanggalPembatalan) {
+        timelineEvents.push({
+            status: order.alasanPembatalan || 'Pesanan Dibatalkan',
+            date: order.tanggalPembatalan,
+            icon: XCircle
+        });
+    }
+    
     if (order.status === 'Approved') {
         const step3Date = new Date(order.tanggalPermintaan); step3Date.setMinutes(step3Date.getMinutes() + 30);
         const step4Date = new Date(order.tanggalPermintaan); step4Date.setMinutes(step4Date.getMinutes() + 45);
@@ -1464,6 +1424,7 @@ const StatusFilterTabs: React.FC<StatusFilterTabsProps> = ({ activeFilter, onFil
         { label: "Menunggu", value: "Pending", icon: FolderClock },
         { label: "Disetujui", value: "Approved", icon: BadgeCheck },
         { label: "Ditolak", value: "Rejected", icon: XCircle },
+        { label: "Dibatalkan", value: "Cancelled", icon: X },
     ];
 
     return (
@@ -1514,16 +1475,21 @@ export default function ConsumptionOrderPage() {
             if (savedHistory) {
                 try {
                     const parsed = JSON.parse(savedHistory);
+                    console.log('📂 Memuat riwayat dari localStorage:', parsed.length, 'items');
                     // Convert string dates back to Date objects
-                    return parsed.map((order: Order) => ({
+                    const orders = parsed.map((order: Order) => ({
                         ...order,
                         tanggalPengiriman: new Date(order.tanggalPengiriman),
                         tanggalPermintaan: new Date(order.tanggalPermintaan)
                     }));
+                    console.log('✅ Riwayat berhasil dimuat');
+                    return orders;
                 } catch (e) {
-                    console.error('Error parsing saved history:', e);
+                    console.error('❌ Error parsing saved history:', e);
                     return [];
                 }
+            } else {
+                console.log('ℹ️ Tidak ada riwayat tersimpan, memulai dengan array kosong');
             }
         }
         return [];
@@ -1531,7 +1497,6 @@ export default function ConsumptionOrderPage() {
     
     const [isFormVisible, setIsFormVisible] = useState(false);
     const [isSuccessful, setIsSuccessful] = useState(false);
-    const [isDeleteAllConfirmOpen, setDeleteAllConfirmOpen] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
     const [isMounted, setIsMounted] = useState(false); // [BARU] Track mounting untuk hydration
 
@@ -1552,37 +1517,17 @@ export default function ConsumptionOrderPage() {
 
     // Simpan history ke localStorage setiap kali berubah
     useEffect(() => {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && history.length > 0) {
+            console.log('💾 Menyimpan riwayat ke localStorage:', history.length, 'items');
             localStorage.setItem('consumptionOrderHistory', JSON.stringify(history));
+            console.log('✅ Riwayat berhasil disimpan');
         }
     }, [history]);
 
-    // [BARU] Hapus data mock yang ID-nya dimulai dengan "ORD" (buatan sistem, bukan user)
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const savedHistory = localStorage.getItem('consumptionOrderHistory');
-            if (savedHistory) {
-                try {
-                    const parsed = JSON.parse(savedHistory);
-                    // Filter out mock data (ID dimulai dengan "ORD")
-                    const realUserOrders = parsed.filter((order: Order) => !order.id.startsWith('ORD'));
-                    
-                    // Jika ada data yang dihapus, update localStorage dan state
-                    if (realUserOrders.length !== parsed.length) {
-                        const convertedOrders = realUserOrders.map((order: Order) => ({
-                            ...order,
-                            tanggalPengiriman: new Date(order.tanggalPengiriman),
-                            tanggalPermintaan: new Date(order.tanggalPermintaan)
-                        }));
-                        setHistory(convertedOrders);
-                        localStorage.setItem('consumptionOrderHistory', JSON.stringify(realUserOrders));
-                    }
-                } catch (e) {
-                    console.error('Error cleaning mock data:', e);
-                }
-            }
-        }
-    }, []); // Hanya run sekali saat mount
+    // NOTE: Sebelumnya terdapat logic yang membersihkan data berdasarkan ID yang dimulai dengan "ORD".
+    // Itu menyebabkan pesanan yang dibuat oleh user (juga menggunakan prefix "ORD") ikut terhapus saat mount.
+    // Untuk menjaga persistensi riwayat user, blok pembersihan ini dihapus. Jika diperlukan pembersihan mock
+    // di masa depan, gunakan flag khusus atau pola ID yang berbeda (mis. "MOCK_...") untuk membedakan.
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -1635,7 +1580,7 @@ export default function ConsumptionOrderPage() {
     }, [filteredHistory]);
 
     const statusCounts = useMemo(() => {
-        const counts: Record<OrderStatus | 'All', number> = { All: 0, Pending: 0, Approved: 0, Rejected: 0, Draft: 0 };
+        const counts: Record<OrderStatus | 'All', number> = { All: 0, Pending: 0, Approved: 0, Rejected: 0, Draft: 0, Cancelled: 0 };
         // Logika penghitungan harus berdasarkan tanggal yang difilter juga agar konsisten
         let baseOrders = history;
          if (date?.from) {
@@ -1662,16 +1607,34 @@ export default function ConsumptionOrderPage() {
         return counts;
     }, [history, date]);
 
-    const handleFormSubmit = (newOrder: Order) => { setHistory(prev => [newOrder, ...prev]); };
-    const handleDelete = (order: Order) => { setHistory(prev => prev.filter(item => item.id !== order.id)); };
-    const handleDeleteAll = () => {
-        const remainingOrders = history.filter(order => !filteredHistory.includes(order));
-        setHistory(remainingOrders);
+    const handleFormSubmit = (newOrder: Order) => { 
+        console.log('📝 Menambahkan pesanan baru:', newOrder);
+        setHistory(prev => {
+            const updatedHistory = [newOrder, ...prev];
+            console.log('📦 Total pesanan sekarang:', updatedHistory.length);
+            return updatedHistory;
+        });
     };
     
-    // [BARU] Fungsi untuk menangani pembatalan dari modal detail
+    // [BARU] Fungsi untuk menangani pembatalan pesanan
     const handleCancelOrder = (order: Order) => {
-        handleDelete(order); // Menggunakan logika hapus yang sama
+        console.log('🚫 Membatalkan pesanan:', order.id);
+        const tanggalPembatalan = new Date();
+        
+        // Update status menjadi Cancelled dan tambahkan timestamp pembatalan
+        setHistory(prev => prev.map(item => 
+            item.id === order.id 
+                ? { 
+                    ...item, 
+                    status: 'Cancelled' as OrderStatus,
+                    tanggalPembatalan: tanggalPembatalan,
+                    alasanPembatalan: 'Dibatalkan oleh pengguna'
+                  } 
+                : item
+        ));
+        
+        console.log('✅ Pesanan berhasil dibatalkan pada:', tanggalPembatalan.toLocaleString('id-ID'));
+        console.log('📝 Pembatalan tercatat dalam riwayat dengan status: Cancelled');
         setOrderDetails(null); // Menutup dialog
     };
     
@@ -1784,53 +1747,12 @@ export default function ConsumptionOrderPage() {
                             <div className="p-1 bg-violet-100 dark:bg-violet-900 rounded-lg flex items-center">
                                 <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" className="h-7 w-7 p-0" onClick={() => setViewMode('grid')} aria-label="Grid View"><LayoutGrid className="h-4 w-4" /></Button>
                                 <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" className="h-7 w-7 p-0" onClick={() => setViewMode('list')} aria-label="List View"><List className="h-4 w-4" /></Button>
-                                
-                                {filteredHistory.length > 0 && (
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground">
-                                                <MoreVertical className="h-4 w-4" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent align="end" className="w-auto p-1">
-                                             <Dialog open={isDeleteAllConfirmOpen} onOpenChange={setDeleteAllConfirmOpen}>
-                                                <DialogTrigger asChild>
-                                                    <Button variant="ghost" size="sm" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50">
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Hapus Semua
-                                                    </Button>
-                                                </DialogTrigger>
-                                                <DialogContent>
-                                                    <DialogHeader>
-                                                        <DialogTitle>Hapus Semua Riwayat?</DialogTitle>
-                                                        <DialogDescription>
-                                                            {`Semua ${filteredHistory.length} pesanan yang tampil akan dihapus. Tindakan ini tidak dapat dibatalkan.`}
-                                                        </DialogDescription>
-                                                    </DialogHeader>
-                                                    <DialogFooter>
-                                                        <Button variant="outline" onClick={() => setDeleteAllConfirmOpen(false)}>Batal</Button>
-                                                        <Button
-                                                            className="bg-red-600 text-white hover:bg-red-700"
-                                                            onClick={() => {
-                                                                handleDeleteAll();
-                                                                setDeleteAllConfirmOpen(false);
-                                                            }}
-                                                        >
-                                                            Hapus
-                                                        </Button>
-                                                    </DialogFooter>
-                                                </DialogContent>
-                                            </Dialog>
-                                        </PopoverContent>
-                                    </Popover>
-                                )}
                             </div>
                         </div>
                     </div>
 
                     <OrderHistory 
                         history={paginatedHistory} 
-                        onDelete={handleDelete} 
                         onViewDetails={setOrderDetails} 
                         viewMode={viewMode}
                         totalHistoryCount={history.length}
