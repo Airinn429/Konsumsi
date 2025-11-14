@@ -92,6 +92,7 @@ interface ConsumptionGroup {
 // UPDATED: Order interface (struktur data final) tetap sama
 interface Order {
     id: string;
+    orderNumber: string; // [ADDED] Order number from database (KSM-001, KSM-002, etc.)
     kegiatan: string;
     tanggalPengiriman: Date;
     status: OrderStatus;
@@ -826,6 +827,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
         const finalKegiatan = formData.kegiatan === 'Lainnya' ? formData.kegiatanLainnya : formData.kegiatan;
         const newOrder: Order = {
             id: `ORD${Math.floor(Math.random() * 90000) + 10000}`,
+            orderNumber: 'TEMP', // Temporary, will be replaced by API
             kegiatan: finalKegiatan,
             tanggalPermintaan: formData.tanggalPermintaan,
             tanggalPengiriman: formData.tanggalPengiriman,
@@ -1467,62 +1469,89 @@ const StatusFilterTabs: React.FC<StatusFilterTabsProps> = ({ activeFilter, onFil
 // 8. KOMPONEN UTAMA HALAMAN
 // =========================================================================
 export default function ConsumptionOrderPage() {
-    // Load history dari localStorage atau gunakan array kosong sebagai default
-    // Histori akan tersimpan permanen agar bisa dicek di hari berikutnya
-    const [history, setHistory] = useState<Order[]>(() => {
-        if (typeof window !== 'undefined') {
-            const savedHistory = localStorage.getItem('consumptionOrderHistory');
-            if (savedHistory) {
-                try {
-                    const parsed = JSON.parse(savedHistory);
-                    console.log('📂 Memuat riwayat dari localStorage:', parsed.length, 'items');
-                    // Convert string dates back to Date objects
-                    const orders = parsed.map((order: Order) => ({
-                        ...order,
-                        tanggalPengiriman: new Date(order.tanggalPengiriman),
-                        tanggalPermintaan: new Date(order.tanggalPermintaan)
-                    }));
-                    console.log('✅ Riwayat berhasil dimuat');
-                    return orders;
-                } catch (e) {
-                    console.error('❌ Error parsing saved history:', e);
-                    return [];
-                }
-            } else {
-                console.log('ℹ️ Tidak ada riwayat tersimpan, memulai dengan array kosong');
-            }
-        }
-        return [];
-    });
+    // Load history dari API (bukan localStorage)
+    const [history, setHistory] = useState<Order[]>([]);
     
     const [isFormVisible, setIsFormVisible] = useState(false);
     const [isSuccessful, setIsSuccessful] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
-    const [isMounted, setIsMounted] = useState(false); // [BARU] Track mounting untuk hydration
+    const [isMounted, setIsMounted] = useState(false);
 
     // State untuk Dialog
     const [orderDetails, setOrderDetails] = useState<Order | null>(null);
 
     // State untuk Kalender dan Filter
-    const [date, setDate] = React.useState<DateRange | undefined>({ from: new Date(new Date().setHours(0,0,0,0)), to: undefined });
+    const [date, setDate] = React.useState<DateRange | undefined>(undefined); // Tampilkan semua order by default
     const [activeStatusFilter, setActiveStatusFilter] = useState<OrderStatus | 'All'>('All');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [currentPage, setCurrentPage] = useState(1);
     const perPage = 6;
 
-    // [BARU] Set mounted state setelah component mount
+    // Set mounted state setelah component mount
     useEffect(() => {
         setIsMounted(true);
     }, []);
 
-    // Simpan history ke localStorage setiap kali berubah
+    // Load orders dari API saat component mount
     useEffect(() => {
-        if (typeof window !== 'undefined' && history.length > 0) {
-            console.log('💾 Menyimpan riwayat ke localStorage:', history.length, 'items');
-            localStorage.setItem('consumptionOrderHistory', JSON.stringify(history));
-            console.log('✅ Riwayat berhasil disimpan');
+        async function loadOrders() {
+            try {
+                console.log('🔄 Loading orders from API...');
+                const response = await fetch('/api/orders');
+                
+                if (!response.ok) {
+                    console.error('❌ Failed to load orders from API. Status:', response.status);
+                    return;
+                }
+                
+                const orders = await response.json();
+                console.log('📦 Raw orders from API:', orders);
+                
+                // Convert string dates to Date objects
+                const formattedOrders: Order[] = orders.map((order: {
+                    id: string;
+                    orderNumber: string;
+                    kegiatan: string;
+                    tanggalPermintaan: string;
+                    tanggalPengiriman: string;
+                    untukBagian: string;
+                    yangMengajukan: string;
+                    noHp: string;
+                    namaApprover: string;
+                    tipeTamu?: string;
+                    keterangan?: string;
+                    status: string;
+                    tanggalPembatalan?: string;
+                    alasanPembatalan?: string;
+                    items?: ConsumptionItemData[];
+                }) => ({
+                    id: order.id,
+                    orderNumber: order.orderNumber,
+                    kegiatan: order.kegiatan,
+                    tanggalPermintaan: new Date(order.tanggalPermintaan),
+                    tanggalPengiriman: new Date(order.tanggalPengiriman),
+                    untukBagian: order.untukBagian,
+                    yangMengajukan: order.yangMengajukan,
+                    noHp: order.noHp,
+                    namaApprover: order.namaApprover,
+                    tipeTamu: order.tipeTamu || '',
+                    keterangan: order.keterangan || '',
+                    status: order.status as OrderStatus,
+                    tanggalPembatalan: order.tanggalPembatalan ? new Date(order.tanggalPembatalan) : undefined,
+                    alasanPembatalan: order.alasanPembatalan,
+                    items: order.items || [],
+                }));
+                
+                setHistory(formattedOrders);
+                console.log('✅ Orders loaded from API:', formattedOrders.length, 'orders');
+                console.log('📋 Orders:', formattedOrders.map((o: Order) => o.orderNumber).join(', '));
+            } catch (error) {
+                console.error('❌ Error loading orders:', error);
+            }
         }
-    }, [history]);
+        
+        loadOrders(); // Load langsung tanpa check isMounted
+    }, []); // Empty dependency array - hanya run sekali saat mount
 
     // NOTE: Sebelumnya terdapat logic yang membersihkan data berdasarkan ID yang dimulai dengan "ORD".
     // Itu menyebabkan pesanan yang dibuat oleh user (juga menggunakan prefix "ORD") ikut terhapus saat mount.
@@ -1607,35 +1636,126 @@ export default function ConsumptionOrderPage() {
         return counts;
     }, [history, date]);
 
-    const handleFormSubmit = (newOrder: Order) => { 
-        console.log('📝 Menambahkan pesanan baru:', newOrder);
-        setHistory(prev => {
-            const updatedHistory = [newOrder, ...prev];
-            console.log('📦 Total pesanan sekarang:', updatedHistory.length);
-            return updatedHistory;
-        });
+    const handleFormSubmit = async (newOrder: Order) => { 
+        console.log('📝 Submitting order form...');
+        
+        try {
+            // Get username dari localStorage
+            const username = typeof window !== 'undefined' ? localStorage.getItem('username') || 'nadia' : 'nadia';
+            
+            // Prepare payload untuk API
+            const payload = {
+                kegiatan: newOrder.kegiatan,
+                kegiatanLainnya: newOrder.kegiatan === 'Lainnya' ? newOrder.keterangan : undefined,
+                tanggalPermintaan: newOrder.tanggalPermintaan.toISOString(),
+                tanggalPengiriman: newOrder.tanggalPengiriman.toISOString(),
+                untukBagian: newOrder.untukBagian,
+                yangMengajukan: newOrder.yangMengajukan,
+                noHp: newOrder.noHp,
+                namaApprover: newOrder.namaApprover,
+                tipeTamu: newOrder.tipeTamu || '',
+                keterangan: newOrder.keterangan || '',
+                createdBy: username,
+                items: newOrder.items.map(item => ({
+                    jenisKonsumsi: item.jenisKonsumsi,
+                    qty: Number(item.qty) || 0,
+                    satuan: item.satuan,
+                    lokasiPengiriman: item.lokasiPengiriman,
+                    sesiWaktu: item.sesiWaktu,
+                    waktu: item.waktu,
+                })),
+            };
+            
+            console.log('📤 Payload to API:', payload);
+            
+            // POST ke API
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            
+            console.log('📡 Response status:', response.status);
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                console.error('❌ API Error:', errorData);
+                throw new Error(errorData.error || 'Failed to create order');
+            }
+            
+            const createdOrder = await response.json();
+            console.log('✅ Order berhasil dibuat:', createdOrder.orderNumber);
+            console.log('📦 Created order data:', createdOrder);
+            
+            // Update history dengan order baru dari API
+            setHistory(prev => [{
+                id: createdOrder.id,
+                orderNumber: createdOrder.orderNumber,
+                kegiatan: createdOrder.kegiatan,
+                tanggalPermintaan: new Date(createdOrder.tanggalPermintaan),
+                tanggalPengiriman: new Date(createdOrder.tanggalPengiriman),
+                untukBagian: createdOrder.untukBagian,
+                yangMengajukan: createdOrder.yangMengajukan,
+                noHp: createdOrder.noHp,
+                namaApprover: createdOrder.namaApprover,
+                tipeTamu: createdOrder.tipeTamu || '',
+                keterangan: createdOrder.keterangan || '',
+                status: createdOrder.status as OrderStatus,
+                items: createdOrder.items || [],
+            }, ...prev]);
+            
+            console.log('✅ History updated. New length:', history.length + 1);
+            
+        } catch (error) {
+            console.error('❌ Error creating order:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            alert(`Gagal membuat pesanan: ${errorMessage}\n\nSilakan cek console untuk detail.`);
+            throw error; // Re-throw untuk debugging
+        }
     };
     
-    // [BARU] Fungsi untuk menangani pembatalan pesanan
-    const handleCancelOrder = (order: Order) => {
+    // Fungsi untuk menangani pembatalan pesanan
+    const handleCancelOrder = async (order: Order) => {
         console.log('🚫 Membatalkan pesanan:', order.id);
-        const tanggalPembatalan = new Date();
         
-        // Update status menjadi Cancelled dan tambahkan timestamp pembatalan
-        setHistory(prev => prev.map(item => 
-            item.id === order.id 
-                ? { 
-                    ...item, 
-                    status: 'Cancelled' as OrderStatus,
-                    tanggalPembatalan: tanggalPembatalan,
-                    alasanPembatalan: 'Dibatalkan oleh pengguna'
-                  } 
-                : item
-        ));
-        
-        console.log('✅ Pesanan berhasil dibatalkan pada:', tanggalPembatalan.toLocaleString('id-ID'));
-        console.log('📝 Pembatalan tercatat dalam riwayat dengan status: Cancelled');
-        setOrderDetails(null); // Menutup dialog
+      
+        try {
+            // PATCH ke API
+            const response = await fetch(`/api/orders/${order.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    status: 'Cancelled',
+                    tanggalPembatalan: new Date().toISOString(),
+                  
+                }),
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to cancel order');
+            }
+            
+            const updatedOrder = await response.json();
+            console.log('✅ Order berhasil dibatalkan:', updatedOrder.orderNumber);
+            
+            // Update history
+            setHistory(prev => prev.map(item => 
+                item.id === order.id 
+                    ? { 
+                        ...item, 
+                        status: 'Cancelled' as OrderStatus,
+                        tanggalPembatalan: new Date(updatedOrder.tanggalPembatalan),
+                        alasanPembatalan: updatedOrder.alasanPembatalan
+                      } 
+                    : item
+            ));
+            
+            setOrderDetails(null);
+            
+        } catch (error) {
+            console.error('❌ Error cancelling order:', error);
+            alert('Gagal membatalkan pesanan. Silakan coba lagi.');
+        }
     };
     
     return (
@@ -1643,31 +1763,6 @@ export default function ConsumptionOrderPage() {
             <AnimatePresence>
                 {showConfetti && <ConfettiCanvas />}
             </AnimatePresence>
-            <style>{`
-                .rdp-day_selected,
-                .rdp-day_selected:focus-visible,
-                .rdp-day_selected:hover {
-                    background: linear-gradient(to right, #8b5cf6, #d946ef) !important;
-                    color: white !important;
-                    opacity: 1 !important;
-                    border-radius: 9999px !important;
-                }
-                .rdp-day_range_start,
-                .rdp-day_range_end {
-                    background: linear-gradient(to right, #8b5cf6, #d946ef) !important;
-                    color: white !important;
-                    opacity: 1 !important;
-                    border-radius: 9999px !important;
-                }
-                .rdp-day_range_middle {
-                    background-color: rgba(167, 139, 250, 0.2) !important;
-                    color: #4c1d95 !important;
-                    border-radius: 0 !important;
-                }
-                .dark .rdp-day_range_middle {
-                    color: #c4b5fd !important;
-                }
-            `}</style>
             <Card>
                 <CardHeader className="p-6">
                     <div className="bg-violet-50 dark:bg-violet-950/50 p-6 rounded-lg border border-violet-200 dark:border-violet-800 flex flex-col md:flex-row md:items-start md:justify-between gap-6">

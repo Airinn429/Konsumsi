@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/router";
@@ -21,7 +21,7 @@ import {
   Shield,
   ChevronDown
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   TooltipProvider,
   Tooltip,
@@ -82,6 +82,39 @@ const menuData: MenuSection[] = [
 export function AppSidebar({ isCollapsed }: AppSidebarProps) {
   const router = useRouter();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  
+  // State untuk user data dari localStorage
+  const [userData, setUserData] = useState({
+    name: 'User',
+    username: 'user',
+    role: 'user'
+  });
+
+  // Load user data dari localStorage saat component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const name = localStorage.getItem('name');
+      const username = localStorage.getItem('username');
+      const role = localStorage.getItem('role');
+      
+      if (name || username) {
+        setUserData({
+          name: name || username || 'User',
+          username: username || 'user',
+          role: role || 'user'
+        });
+      }
+    }
+  }, []);
+  
+  // Generate initials dari nama
+  const getInitials = (name: string) => {
+    const words = name.split(' ');
+    if (words.length >= 2) {
+      return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
 
   const toggleMenu = (title: string) => {
     setExpandedMenus(prev =>
@@ -135,19 +168,21 @@ export function AppSidebar({ isCollapsed }: AppSidebarProps) {
         {isCollapsed ? (
           <div className="flex justify-center">
             <Avatar className="h-10 w-10 border-2 border-violet-200 dark:border-violet-700">
-              <AvatarImage src="/placeholder-user.jpg" />
-              <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-xs">RI</AvatarFallback>
+              <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-xs">
+                {getInitials(userData.name)}
+              </AvatarFallback>
             </Avatar>
           </div>
         ) : (
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12 border-2 border-violet-200 dark:border-violet-700">
-              <AvatarImage src="/placeholder-user.jpg" />
-              <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white">RI</AvatarFallback>
+              <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white">
+                {getInitials(userData.name)}
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold truncate">Riza Ilhamsyah</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">12231149</p>
+              <p className="font-semibold truncate">{userData.name}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{userData.username}</p>
             </div>
           </div>
         )}

@@ -9,8 +9,16 @@ import { useEffect, useState } from "react";
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [isChecked, setIsChecked] = useState(false);
 
   useEffect(() => {
+    // Only run after component is mounted (client-side only)
+    setIsChecked(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isChecked) return; // Wait until mounted
+
     // Check authentication status
     const checkAuth = () => {
       const loggedIn = localStorage.getItem('isLoggedIn');
@@ -24,14 +32,15 @@ export default function App({ Component, pageProps }: AppProps) {
         router.push('/login');
       } else if (loggedIn === 'true' && router.pathname === '/login') {
         // Already logged in and trying to access login page
-        router.push('/konsumsi');
+        // Redirect to HOME first (not konsumsi)
+        router.push('/');
       }
       
       setIsLoading(false);
     };
 
     checkAuth();
-  }, [router]);
+  }, [router, isChecked]);
 
   // Show loading state while checking authentication
   if (isLoading) {

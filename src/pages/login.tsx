@@ -77,25 +77,37 @@ export default function LoginPage() {
 
         setIsLoading(true);
 
-        // Simulasi proses login
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        try {
+            // Call API login
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+            });
 
-        // Demo: Login berhasil dengan username/password apa saja (untuk development)
-        // Nanti bisa diganti dengan API call yang sebenarnya
-        if (username && password) {
-            // Simpan status login ke localStorage
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('username', username);
-            
-            // Tampilkan konfeti
-            setShowConfetti(true);
-            
-            // Redirect ke halaman konsumsi setelah 2 detik
-            setTimeout(() => {
-                router.push('/konsumsi');
-            }, 2000);
-        } else {
-            setError("Username atau password salah");
+            const data = await response.json();
+
+            if (data.success && data.user) {
+                // Simpan status login ke localStorage
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('username', data.user.username);
+                localStorage.setItem('name', data.user.name);
+                localStorage.setItem('role', data.user.role);
+                
+                // Tampilkan konfeti
+                setShowConfetti(true);
+                
+                // Redirect ke halaman HOME setelah 2 detik
+                setTimeout(() => {
+                    router.push('/');
+                }, 2000);
+            } else {
+                setError(data.error || 'Username atau password salah');
+                setIsLoading(false);
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            setError('Terjadi kesalahan. Silakan coba lagi.');
             setIsLoading(false);
         }
     };
@@ -271,9 +283,20 @@ export default function LoginPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.5 }}
-                        className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400"
+                        className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400 space-y-2"
                     >
                         <p>© 2025 DEMPLON. All rights reserved.</p>
+                        {/* Debug Button - Remove in production */}
+                        <button
+                            onClick={() => {
+                                localStorage.clear();
+                                console.log('✅ localStorage cleared');
+                                window.location.reload();
+                            }}
+                            className="text-xs text-red-500 hover:text-red-600 underline"
+                        >
+                            Clear Session & Reload (Debug)
+                        </button>
                     </motion.div>
                 </motion.div>
             </div>

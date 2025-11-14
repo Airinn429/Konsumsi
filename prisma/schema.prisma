@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+  // Remove custom output, use default node_modules/.prisma/client
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Model untuk User/Pegawai
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String   // Password user untuk login
+  name      String
+  email     String?  @unique
+  role      String   @default("user") // user, admin, approver
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relasi dengan orders
+  ordersCreated Order[] @relation("OrderCreator")
+}
+
+// Model untuk Order Konsumsi (sesuai dengan struktur di konsumsi/index.tsx)
+model Order {
+  id                  String    @id @default(cuid())
+  orderNumber         String    @unique // Auto-generated
+  
+  // Data kegiatan
+  kegiatan            String    // Jenis kegiatan/acara
+  kegiatanLainnya     String?   // Jika kegiatan = "Lain-lain"
+  
+  // Tanggal
+  tanggalPermintaan   DateTime  // Tanggal pembuatan order
+  tanggalPengiriman   DateTime  // Tanggal pengiriman konsumsi
+  
+  // Data pemohon
+  untukBagian         String    // Departemen/Bagian
+  yangMengajukan      String    // Nama + NIP yang mengajukan
+  noHp                String    // Nomor telepon
+  namaApprover        String    // Nama approver
+  tipeTamu            String?   // PERTA, Regular, Standar, VIP, VVIP
+  
+  // Informasi tambahan
+  keterangan          String?   // Keterangan tambahan
+  
+  // Status
+  status              String    @default("Pending") // Pending, Approved, Rejected, Draft, Cancelled
+  
+  // Data pembatalan
+  tanggalPembatalan   DateTime? // Tanggal dibatalkan
+  alasanPembatalan    String?   // Alasan pembatalan
+  
+  // Metadata
+  createdBy           String    // Username pembuat
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  
+  // Relasi
+  user                User      @relation("OrderCreator", fields: [createdBy], references: [username])
+  items               ConsumptionItem[]
+}
+
+// Model untuk Item Konsumsi (flat structure sesuai ConsumptionItemData)
+model ConsumptionItem {
+  id                  String  @id @default(cuid())
+  orderId             String
+  
+  // Data konsumsi
+  jenisKonsumsi       String  // Jenis menu/konsumsi
+  qty                 Int     // Jumlah/Quantity
+  satuan              String  // Pax, Box, Porsi, Unit, Gelas
+  
+  // Lokasi dan waktu pengiriman
+  lokasiPengiriman    String  // Lokasi pengiriman
+  sesiWaktu           String  // Pagi, Siang, Sore, Malam, dll
+  waktu               String  // 08:00, 09:00, dst
+  
+  // Relasi
+  order               Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@index([orderId])
+}
+
+// Model untuk Master Data - Jenis Kegiatan
+model JenisKegiatan {
+  id          String   @id @default(cuid())
+  nama        String   @unique
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Model untuk Master Data - Bagian/Departemen
+model Bagian {
+  id          String   @id @default(cuid())
+  nama        String   @unique
+  kode        String?  // Kode departemen
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Model untuk Master Data - Approver
+model Approver {
+  id          String   @id @default(cuid())
+  nama        String   // Nama lengkap
+  nip         String   @unique // Nomor induk pegawai
+  jabatan     String?  // Jabatan
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Model untuk Master Data - Lokasi
+model Lokasi {
+  id          String   @id @default(cuid())
+  nama        String   @unique
+  kategori    String?  // Gedung, Lapangan, dll
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Model untuk Master Data - Jenis Konsumsi/Menu
+model JenisKonsumsi {
+  id          String   @id @default(cuid())
+  nama        String   @unique
+  kategori    String?  // Makanan Berat, Snack, Minuman, dll
+  satuanDefault String @default("Porsi")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
