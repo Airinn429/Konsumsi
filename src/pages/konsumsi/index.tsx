@@ -1496,11 +1496,21 @@ export default function ConsumptionOrderPage() {
     useEffect(() => {
         async function loadOrders() {
             try {
-                console.log('🔄 Loading orders from API...');
-                const response = await fetch('/api/orders');
+                // Get username dari localStorage
+                const username = typeof window !== 'undefined' ? localStorage.getItem('username') : null;
+                
+                if (!username) {
+                    console.warn('⚠️ No username found in localStorage. User might not be logged in.');
+                    return;
+                }
+                
+                console.log('🔄 Loading orders for user:', username);
+                const response = await fetch(`/api/orders?username=${encodeURIComponent(username)}`);
                 
                 if (!response.ok) {
                     console.error('❌ Failed to load orders from API. Status:', response.status);
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Error details:', errorData);
                     return;
                 }
                 
@@ -1543,7 +1553,7 @@ export default function ConsumptionOrderPage() {
                 }));
                 
                 setHistory(formattedOrders);
-                console.log('✅ Orders loaded from API:', formattedOrders.length, 'orders');
+                console.log('✅ Orders loaded for', username, ':', formattedOrders.length, 'orders');
                 console.log('📋 Orders:', formattedOrders.map((o: Order) => o.orderNumber).join(', '));
             } catch (error) {
                 console.error('❌ Error loading orders:', error);
@@ -1552,7 +1562,6 @@ export default function ConsumptionOrderPage() {
         
         loadOrders(); // Load langsung tanpa check isMounted
     }, []); // Empty dependency array - hanya run sekali saat mount
-
     // NOTE: Sebelumnya terdapat logic yang membersihkan data berdasarkan ID yang dimulai dengan "ORD".
     // Itu menyebabkan pesanan yang dibuat oleh user (juga menggunakan prefix "ORD") ikut terhapus saat mount.
     // Untuk menjaga persistensi riwayat user, blok pembersihan ini dihapus. Jika diperlukan pembersihan mock

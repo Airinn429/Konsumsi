@@ -1,3 +1,2 @@
-// This file is deprecated and not used in the current application
-// The layout has been simplified in _app.tsx
-export {}
+// Re-export to preserve legacy import paths that still use lowercase naming
+export { AppLayout } from "./AppLayout";

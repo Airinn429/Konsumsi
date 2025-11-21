@@ -1,5 +1,7 @@
 // prisma/seed.ts
 import { PrismaClient } from '@prisma/client';  // ✅ Path standar
+import { hashPassword } from '../src/lib/password';
+import { generatePrefixedId } from '../src/lib/id-generator';
 
 const prisma = new PrismaClient();
 
@@ -7,12 +9,17 @@ async function main() {
   console.log('🌱 Starting seed...');
 
   // Create sample users
+  const adminPasswordHash = await hashPassword('admin123');
+  const nadiaPasswordHash = await hashPassword('123456');
+
   const user1 = await prisma.user.upsert({
     where: { username: 'admin' },
-    update: {},
+    update: {
+      password: adminPasswordHash,
+    },
     create: {
       username: 'admin',
-      password: 'admin123',
+      password: adminPasswordHash,
       name: 'Administrator',
       email: 'admin@demplon.com',
       role: 'admin',
@@ -21,10 +28,12 @@ async function main() {
 
   const user2 = await prisma.user.upsert({
     where: { username: 'nadia' },
-    update: {},
+    update: {
+      password: nadiaPasswordHash,
+    },
     create: {
       username: 'nadia',
-      password: '123456',
+      password: nadiaPasswordHash,
       name: 'Nadia Addnan',
       email: 'nadia@demplon.com',
       role: 'user',
@@ -48,7 +57,10 @@ async function main() {
     await prisma.jenisKegiatan.upsert({
       where: { nama },
       update: {},
-      create: { nama },
+      create: {
+        id: await generatePrefixedId(prisma, 'jenisKegiatan'),
+        nama,
+      },
     });
   }
   console.log('✅ Jenis Kegiatan created');
@@ -82,7 +94,10 @@ async function main() {
     await prisma.approver.upsert({
       where: { nip: approver.nip },
       update: {},
-      create: approver,
+      create: {
+        id: await generatePrefixedId(prisma, 'approver'),
+        ...approver,
+      },
     });
   }
   console.log('✅ Approver created');
@@ -100,7 +115,10 @@ async function main() {
     await prisma.lokasi.upsert({
       where: { nama: lokasi.nama },
       update: {},
-      create: lokasi,
+      create: {
+        id: await generatePrefixedId(prisma, 'lokasi'),
+        ...lokasi,
+      },
     });
   }
   console.log('✅ Lokasi created');
@@ -120,15 +138,31 @@ async function main() {
     await prisma.jenisKonsumsi.upsert({
       where: { nama: konsumsi.nama },
       update: {},
-      create: konsumsi,
+      create: {
+        id: await generatePrefixedId(prisma, 'jenisKonsumsi'),
+        ...konsumsi,
+      },
     });
   }
   console.log('✅ Jenis Konsumsi created');
 
   // Create sample order
+  const orderId = await generatePrefixedId(prisma, 'order');
+
+  const lastOrderForUser = await prisma.order.findFirst({
+    where: { createdBy: user2.username },
+    orderBy: { orderNumber: 'desc' },
+    select: { orderNumber: true },
+  });
+
+  const nextOrderNumber = lastOrderForUser 
+    ? String(parseInt(lastOrderForUser.orderNumber) + 1).padStart(5, '0')
+    : 'ORD-00001';
+
   const sampleOrder = await prisma.order.create({
     data: {
-      orderNumber: 'KSM-001',
+      id: orderId,
+      orderNumber: nextOrderNumber,
       kegiatan: 'Rapat Internal',
       tanggalPermintaan: new Date('2025-11-10'),
       tanggalPengiriman: new Date('2025-11-15'),

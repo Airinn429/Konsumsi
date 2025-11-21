@@ -1,6 +1,8 @@
 // scripts/add-data.ts
 // Script untuk menambahkan semua data (User + Master Data + Order)
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type Prisma } from '@prisma/client';
+import { generatePrefixedId } from '../src/lib/id-generator';
+import { hashPassword } from '../src/lib/password';
 
 const prisma = new PrismaClient();
 
@@ -10,22 +12,38 @@ async function addData() {
   try {
     // 1. Tambah User
     console.log('👤 Menambahkan user...');
+    const passwordHash = await hashPassword('123456');
+
     const user = await prisma.user.create({
       data: {
         username: 'nadia',
-        password: '123456',
+        password: passwordHash,
         name: 'Nadia Addnan',
         email: 'nadia@demplon.com',
         role: 'user',
       },
     });
     console.log('✅ User berhasil ditambahkan:', user.username);
+    console.log('   Password disimpan sebagai hash');
 
     // 2. Tambah Order dengan Items
     console.log('\n📦 Menambahkan order...');
+    const orderId = await generatePrefixedId(prisma, 'order');
+
+    const lastOrderForUser = await prisma.order.findFirst({
+      where: { createdBy: user.username },
+      orderBy: { orderNumber: 'desc' },
+      select: { orderNumber: true },
+    });
+
+    const nextOrderNumber = lastOrderForUser 
+      ? String(parseInt(lastOrderForUser.orderNumber) + 1).padStart(5, '0')
+      : 'ORD-00001';
+
     const order = await prisma.order.create({
       data: {
-        orderNumber: 'KSM-001',
+        id: orderId,
+        orderNumber: nextOrderNumber,
         kegiatan: 'Rapat Internal',
         tanggalPermintaan: new Date('2025-11-11'),
         tanggalPengiriman: new Date('2025-11-13'),
@@ -69,7 +87,7 @@ async function addData() {
       include: {
         items: true,
       },
-    });
+    }) as Prisma.OrderGetPayload<{ include: { items: true } }>;
     console.log('✅ Order berhasil ditambahkan:', order.orderNumber);
     console.log('   - Kegiatan:', order.kegiatan);
     console.log('   - Items:', order.items.length, 'item');

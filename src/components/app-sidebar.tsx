@@ -1,2 +1,2 @@
-// This file is deprecated and not used in the current application
-export {}
+// Re-export legacy path so imports using lowercase naming keep working
+export { AppSidebar } from "./AppSidebar";

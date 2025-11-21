@@ -11,7 +11,7 @@ async function checkUser() {
     const users = await prisma.user.findMany({
       select: {
         username: true,
-        password: true,
+        passwordHash: true,
         name: true,
         email: true,
         role: true,
@@ -28,7 +28,7 @@ async function checkUser() {
     
     users.forEach((user, index) => {
       console.log(`${index + 1}. Username: ${user.username}`);
-      console.log(`   Password: ${user.password}`);
+      console.log(`   Password Hash: ${user.passwordHash}`);
       console.log(`   Name: ${user.name}`);
       console.log(`   Email: ${user.email || 'null'}`);
       console.log(`   Role: ${user.role}`);
@@ -37,7 +37,7 @@ async function checkUser() {
 
     console.log('💡 Untuk login, gunakan:');
     console.log(`   Username: ${users[0].username}`);
-    console.log(`   Password: ${users[0].password}`);
+    console.log(`   Password Hash: ${users[0].passwordHash}`);
 
   } catch (error) {
     console.error('❌ Error:', error);

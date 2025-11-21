@@ -10,7 +10,7 @@ Database aplikasi konsumsi DEMPLON menggunakan Prisma ORM dengan PostgreSQL.
 #### 1. **User** - Data pengguna/pegawai
 - `id` (Int) - Primary key, auto increment
 - `username` (String) - Username unik untuk login
-- `password` (String?) - Password (optional untuk development)
+- `passwordHash` (String) - Password yang sudah di-hash (bcrypt)
 - `name` (String) - Nama lengkap user
 - `email` (String?) - Email (unique)
 - `role` (String) - Role user (user, admin)

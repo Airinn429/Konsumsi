@@ -1,6 +1,7 @@
 // src/pages/api/orders/index.ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { generatePrefixedId } from '@/lib/id-generator';
 
 // Interface untuk item konsumsi
 interface ConsumptionItemInput {
@@ -18,8 +19,23 @@ export default async function handler(
 ) {
   if (req.method === 'GET') {
     try {
-      console.log('🔍 Fetching orders from database...');
+      // Get username dari query parameter
+      const { username } = req.query;
+      
+      if (!username || typeof username !== 'string') {
+        return res.status(400).json({ 
+          error: 'Username is required',
+          message: 'Please provide username in query parameter'
+        });
+      }
+
+      console.log('🔍 Fetching orders for user:', username);
+      
+      // Filter orders berdasarkan createdBy (username yang login)
       const orders = await prisma.order.findMany({
+        where: {
+          createdBy: username, // Hanya ambil order milik user ini
+        },
         include: {
           items: true,
           user: {
@@ -35,7 +51,7 @@ export default async function handler(
         },
       });
 
-      console.log('✅ Orders fetched:', orders.length);
+      console.log('✅ Orders fetched for', username, ':', orders.length);
       return res.status(200).json(orders);
     } catch (error) {
       console.error('❌ Error fetching orders:', error);
@@ -98,20 +114,24 @@ export default async function handler(
 
       // Generate order number
       const lastOrder = await prisma.order.findFirst({
+        where: { createdBy },
         orderBy: {
-          createdAt: 'desc',
+          orderNumber: 'desc',
+        },
+        select: {
+          orderNumber: true,
         },
       });
 
-      let orderNumber = 'KSM-001';
-      if (lastOrder && lastOrder.orderNumber) {
-        const lastNumber = parseInt(lastOrder.orderNumber.split('-')[1]);
-        orderNumber = `KSM-${String(lastNumber + 1).padStart(3, '0')}`;
-      }
+      const orderNumber = (lastOrder?.orderNumber ?? 0) + 1;
+
+      // Generate custom ID for order
+      const orderId = await generatePrefixedId(prisma, 'order');
 
       // Create order with items
       const order = await prisma.order.create({
         data: {
+          id: orderId,
           orderNumber,
           kegiatan,
           kegiatanLainnya: kegiatanLainnya || null,

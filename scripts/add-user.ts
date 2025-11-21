@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { hashPassword } from '../src/lib/password';
 
 const prisma = new PrismaClient();
 
@@ -6,27 +7,46 @@ async function addUser() {
   console.log('👤 Menambahkan user baru...\n');
 
   try {
-    // Ganti data di bawah ini sesuai kebutuhan
-    const newUser = await prisma.user.create({
+    // User 1: Riza Ilhamsyah
+    const passwordHash1 = await hashPassword('123456');
+    const user1 = await prisma.user.create({
       data: {
-        username: 'Riza Ilhamsyah',      // ⬅️ Ganti username
-        password: '12231149',     // ⬅️ Ganti password
-        name: 'Riza Ilhamsyah',   // ⬅️ Ganti nama lengkap
-        email: 'riza@example.com',   // ⬅️ Ganti email (opsional)
-        role: 'user',                // ⬅️ Pilih: 'user', 'admin', atau 'approver'
+        username: 'nadia addnan',
+        password: passwordHash1,
+        name: 'nadia addnan',
+        email: 'nadia@example.com',
+        role: 'user',
       },
     });
 
-    console.log('✅ User berhasil ditambahkan!');
-    console.log('   Username: ', newUser.username);
-    console.log('   Name:', newUser.name);
-    console.log('   Email:', newUser.email);
-    console.log('   Role:', newUser.role);
-    console.log('   ID:', newUser.id);
+    console.log('✅ User 1 berhasil ditambahkan!');
+    console.log('   Username:', user1.username);
+    console.log('   Name:', user1.name);
+    console.log('   Email:', user1.email);
+    console.log('   Role:', user1.role);
+    console.log('   ID:', user1.id);
+    console.log();
+
+    // User 2: Fauzi
+    const passwordHash2 = await hashPassword('654321');
+    const user2 = await prisma.user.create({
+      data: {
+        username: 'Fauzi',
+        password: passwordHash2,
+        name: 'Fauzi',
+        email: 'fauzi@example.com',
+        role: 'user',
+      },
+    });
+
+    console.log('✅ User 2 berhasil ditambahkan!');
+    console.log('   Username:', user2.username);
+    console.log('   Name:', user2.name);
+    console.log('   Email:', user2.email);
+    console.log('   Role:', user2.role);
+    console.log('   ID:', user2.id);
     
-    console.log('\n💡 Sekarang user bisa login dengan:');
-    console.log('   Username:', newUser.username);
-    console.log('   Password: (yang Anda set di atas)');
+    console.log('\n💡 Kedua user sekarang bisa login!');
     
   } catch (error) {
     if (error instanceof Error) {

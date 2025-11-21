@@ -1,6 +1,8 @@
 // scripts/add-order.ts
 // Script untuk menambah order baru ke database
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type Prisma } from '@prisma/client';
+import { generatePrefixedId } from '../src/lib/id-generator';
+import { hashPassword } from '../src/lib/password';
 
 const prisma = new PrismaClient();
 
@@ -8,33 +10,37 @@ async function addOrder() {
   console.log('📦 Menambahkan order baru...\n');
 
   try {
-    // Ambil nomor order terakhir
-    const lastOrder = await prisma.order.findFirst({
-      orderBy: { createdAt: 'desc' },
-    });
-
-    let orderNumber = 'KSM-001';
-    if (lastOrder && lastOrder.orderNumber) {
-      const lastNumber = parseInt(lastOrder.orderNumber.split('-')[1]);
-      orderNumber = `KSM-${String(lastNumber + 1).padStart(3, '0')}`;
-    }
-
     // Buat user dulu jika belum ada
+    const passwordHash = await hashPassword('123456');
+
     const user = await prisma.user.upsert({
       where: { username: 'nadia' },
-      update: {},
+      update: { password: passwordHash },
       create: {
         username: 'nadia',
-        password: '123456',
+        password: passwordHash,
         name: 'Nadia Addnan',
-        email: 'nadia@example.com',
+        email: 'nadia@demplon.com',
         role: 'user',
       },
     });
 
+    const orderId = await generatePrefixedId(prisma, 'order');
+
+    const lastOrderForUser = await prisma.order.findFirst({
+      where: { createdBy: user.username },
+      orderBy: { orderNumber: 'desc' },
+      select: { orderNumber: true },
+    });
+
+    const orderNumber = lastOrderForUser 
+      ? String(parseInt(lastOrderForUser.orderNumber) + 1).padStart(5, '0')
+      : 'ORD-00001';
+
     // Buat order baru
     const order = await prisma.order.create({
       data: {
+        id: orderId,
         orderNumber,
         kegiatan: 'Rapat Internal',
         tanggalPermintaan: new Date(),
@@ -78,8 +84,9 @@ async function addOrder() {
       },
       include: {
         items: true,
+        user: true,
       },
-    });
+    }) as Prisma.OrderGetPayload<{ include: { items: true; user: true } }>;
 
     console.log('✅ Order berhasil ditambahkan!');
     console.log('   Order Number:', order.orderNumber);
