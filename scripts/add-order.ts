@@ -1,6 +1,6 @@
 // scripts/add-order.ts
 // Script untuk menambah order baru ke database
-import { PrismaClient, type Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { generatePrefixedId } from '../src/lib/id-generator';
 import { hashPassword } from '../src/lib/password';
 
@@ -86,7 +86,7 @@ async function addOrder() {
         items: true,
         user: true,
       },
-    }) as Prisma.OrderGetPayload<{ include: { items: true; user: true } }>;
+    });
 
     console.log('✅ Order berhasil ditambahkan!');
     console.log('   Order Number:', order.orderNumber);

@@ -1,6 +1,6 @@
 // scripts/add-data.ts
 // Script untuk menambahkan semua data (User + Master Data + Order)
-import { PrismaClient, type Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { generatePrefixedId } from '../src/lib/id-generator';
 import { hashPassword } from '../src/lib/password';
 
@@ -87,7 +87,7 @@ async function addData() {
       include: {
         items: true,
       },
-    }) as Prisma.OrderGetPayload<{ include: { items: true } }>;
+    });
     console.log('✅ Order berhasil ditambahkan:', order.orderNumber);
     console.log('   - Kegiatan:', order.kegiatan);
     console.log('   - Items:', order.items.length, 'item');
