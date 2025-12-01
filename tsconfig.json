@@ -15,8 +15,10 @@
     "incremental": true,
     "paths": {
       "@/*": ["./src/*"]
+      
     }
+    
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "scripts", "prisma/seed.ts"]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "tools/add-data.ts"],
+  "exclude": ["node_modules", "tools", "prisma/seed.ts"]
 }
