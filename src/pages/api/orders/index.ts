@@ -112,18 +112,26 @@ export default async function handler(
         });
       }
 
-      // Generate order number
-      const lastOrder = await prisma.order.findFirst({
-        where: { createdBy },
-        orderBy: {
-          orderNumber: 'desc',
-        },
-        select: {
-          orderNumber: true,
-        },
+      // Validasi user exists
+      const user = await prisma.user.findUnique({
+        where: { username: createdBy },
       });
 
-      const orderNumber = (lastOrder?.orderNumber ?? 0) + 1;
+      if (!user) {
+        console.error('❌ User not found:', createdBy);
+        return res.status(404).json({ 
+          error: 'User not found',
+          message: `User with username "${createdBy}" does not exist. Please login again.`
+        });
+      }
+
+      console.log('✅ User found:', user.username);
+      
+      // Generate order number (unique global, format: KSM-XXXX)
+      const totalOrderCount = await prisma.order.count();
+      const orderNumber = `KSM-${String(totalOrderCount + 1).padStart(4, '0')}`;
+      
+      console.log('📋 Generated orderNumber:', orderNumber);
 
       // Generate custom ID for order
       const orderId = await generatePrefixedId(prisma, 'order');

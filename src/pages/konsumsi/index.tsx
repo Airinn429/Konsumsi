@@ -147,7 +147,9 @@ const initialFormData: FormData = {
     tanggalPermintaan: new Date(),
     tanggalPengiriman: new Date(),
     untukBagian: 'Dep. Teknologi Informasi PKC (C001370000)',
-    yangMengajukan: 'Riza Ilhamsyah (12231149)',
+    yangMengajukan: typeof window !== 'undefined' 
+        ? (localStorage.getItem('name') || localStorage.getItem('username') || 'User')
+        : 'User',
     noHp: '',
     namaApprover: 'Jojok Satriadi (1140122)',
     tipeTamu: '', // [DIKEMBALIKAN]
@@ -190,20 +192,14 @@ const approverOptions = [
     "Yayan Taryana (3123091)", "Yara Budhi Widowati (3123084)", "Zaki Faishal Aziz (3042168)"
 ];
 
-const tipeTamuOptions = ["PERTA", "Regular", "Standar", "VIP", "VVIP"]; // [DIKEMBALIKAN]
+const tipeTamuOptions = ["PERTA", "Regular", "Standar", "VIP", "VVIP"]; 
 
 const lokasiOptions = ["Bagging", "CCB", "Club House", "Departemen Riset", "Gedung 101-K", "Gedung Anggrek", " Gedung Bidding Center", "Gedung Contraction Office", "Gedung K3", "Gedung LC", "Gedung Maintanance Office", "Gedung Mawar", "Gedung Melati", "Gedung Purna Bhakti", "Gedung Pusat Administrasi", "Gedung RPK", "Gedung Saorga", "GH-B", "GH-C", "GPA Lt-3", "Gudang Bahan Baku", "Gudang Bulk Material", "Gedung Suku Cadang", "Jakarta", "Kantor SP2K", "Kebon Bibit", "Klinik PT HPH", "Kolam Pancing Type B", "Kolam Renang", "Kujang Kampioen Riset", "Laboraturium/Main Lab", "Lapang Basket Type B", "Lapang Futsal", "Lapang Sepak Bola Type E", "Lapang Tenis Type B", "Lapang Volly Type E", "Lapangan Helipad", "Lapangan Panahan", "Lapangan Volley", "Mekanik K1A", "Mekanik K1B", "Not Defined", "NPK-2", "Pos Selatan 01", "Posko Pengamanan Bawah", "Ruang Rapat NPK-1", "Ruang Rapat NPK-2", "Utility K-1A", "Wisma Kujang"];
 
 const satuanOptions = ["Pax", "Box", "Porsi", "Unit", "Gelas"];
 
 const sesiWaktuOptions = ["Pagi", "Siang", "Sore", "Malam", "Sahur", "Buka Puasa", "Snack Malam", "Tengah Malam"];
-
-const waktuOptions = [
-    "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-    "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
-    "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
-    "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "03:00", "03:30"
-];
+   
 
 // Data untuk logika cascading
 const menuByTime: Record<string, string[]> = {
@@ -217,7 +213,7 @@ const menuByTime: Record<string, string[]> = {
     "Tengah Malam": ["Nasi Box", "Nescafe", "Kopi", "Ayam Goreng"],
 };
 
-// [DIKEMBALIKAN] Data menu berdasarkan tipe tamu
+//  Data menu berdasarkan tipe tamu
 const menuByGuestType: Record<string, string[]> = {
     "VVIP": ["Ayam Goreng", "Anggur", "Takjil", "Air Mineral", "Snack Kering", "Snack Pagi", "GKT", "Ketupat Lebaran", "Permen", "Mie Instan", "Teh Sariwangi", "Nescafe", "Roti Manis", "Snack", "Kopi Kapal Api Special Mix", "Indocafe Coffemix", "Paket Sembako", "Buah-Buahan", "Creamer", "Teh Celup", "Milo", "Telor Rebus", "Jamuan Diluar Kawasan", "Susu Ultra", "Jeruk Manis", "Pisang Sunpride", "Nasi Putih/Timbel", "Sate Maranggi Sapi", "Parasmanan", "Pocari Sweat", "Teh Kotak", "Aneka Pepes"],
     "VIP": ["Prasmanan", "Nasi Box", "Galon", "Takjil", "Snack", "Ayam Goreng", "Anggur", "Takjil", "Air Mineral", "Snack Kering", "Snack Pagi", "GKT", "Ketupat Lebaran", "Permen", "Mie Instan", "Teh Sariwangi", "Nescafe", "Roti Manis", "Snack"],
@@ -226,7 +222,7 @@ const menuByGuestType: Record<string, string[]> = {
     "PERTA": ["Nasi Box", "Snack Box", "Coffee Break", "Galon", "Bubur Ayam", "Ketupat Lebaran", "Roti Manis"],
 };
 
-// [DIPERBAIKI] Tipe diubah menjadi Record<string, string[]> dan koma yang hilang ditambahkan
+// Tipe diubah menjadi Record<string, string[]> dan koma yang hilang ditambahkan
 const unitByConsumption: Record<string, string[]> = {
     "Pax": ["Parasmanan", "Prasmanan", "Nasi Putih/Timbel", "Sate Maranggi Sapi", "Bubur Ayam", "GKT", "Ketupat Lebaran", "Jamuan Diluar Kawasan"],
     "Box": ["Nasi Box", "Snack Box", "Paket Sembako"],
@@ -236,9 +232,7 @@ const unitByConsumption: Record<string, string[]> = {
 };
 
 
-// =========================================================================
 // 2. UTILITAS STATUS
-// =========================================================================
 const getStatusDisplay = (status: OrderStatus) => {
     switch (status) {
         case 'Approved':
@@ -254,9 +248,7 @@ const getStatusDisplay = (status: OrderStatus) => {
     }
 };
 
-// =========================================================================
 // 3. KOMPONEN-KOMPONEN BARU & LAMA
-// =========================================================================
 
 // Komponen Combobox (Searchable Select) yang bisa digunakan kembali
 interface SearchableSelectProps {
@@ -851,7 +843,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
     useEffect(() => { if (isSuccessful) { setFormData(initialData); setErrors({}); } }, [isSuccessful, initialData]);
 
     // [DIPERBAIKI] tipeTamuOptions dikembalikan ke useMemo
-    const allOptions = useMemo(() => ({ kegiatanOptions, bagianOptions, approverOptions, tipeTamuOptions, lokasiOptions, satuanOptions, sesiWaktuOptions, waktuOptions }), []);
+    const allOptions = useMemo(() => ({ kegiatanOptions, bagianOptions, approverOptions, tipeTamuOptions, lokasiOptions, satuanOptions, sesiWaktuOptions}), []);
 
     const ReviewDetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
         <div className="flex justify-between items-start py-2">
@@ -1465,9 +1457,7 @@ const StatusFilterTabs: React.FC<StatusFilterTabsProps> = ({ activeFilter, onFil
     );
 }
 
-// =========================================================================
 // 8. KOMPONEN UTAMA HALAMAN
-// =========================================================================
 export default function ConsumptionOrderPage() {
     // Load history dari API (bukan localStorage)
     const [history, setHistory] = useState<Order[]>([]);

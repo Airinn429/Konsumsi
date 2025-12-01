@@ -57,6 +57,36 @@ CREATE TABLE "MenuItem" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "MenuItem_pkey" PRIMARY KEY ("id")
+    -- CreateTable
+CREATE TABLE "SesiWaktu" (
+    "id" TEXT NOT NULL,
+    "nama" TEXT NOT NULL,
+    "urutan" INTEGER,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SesiWaktu_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Menu" (
+    "id" TEXT NOT NULL,
+    "nama" TEXT NOT NULL,
+    "sesiWaktu" TEXT NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Menu_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SesiWaktu_nama_key" ON "SesiWaktu"("nama");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Menu_nama_sesiWaktu_key" ON "Menu"("nama", "sesiWaktu");
+
 );
 
 -- CreateIndex

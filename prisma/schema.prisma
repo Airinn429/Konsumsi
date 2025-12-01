@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
+  id            String @id @default(cuid())
   username      String   @unique
   name          String
   email         String?  @unique
@@ -20,7 +20,7 @@ model User {
 }
 
 model Order {
-  id                String            @id
+  id                String            @id @default(cuid())
   orderNumber       String            @unique
   kegiatan          String
   kegiatanLainnya   String?
@@ -42,18 +42,19 @@ model Order {
 }
 
 model ConsumptionItem {
-  id               String @id @default(cuid())
-  orderId          String
+  id              String @id @default(cuid())
   jenisKonsumsi    String
   qty              Int
   satuan           String
   lokasiPengiriman String
   sesiWaktu        String
   waktu            String
-  order            Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  @@index([orderId])
+  orderId          String     
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
+
+
 
 model JenisKegiatan {
   id        String   @id
@@ -64,7 +65,7 @@ model JenisKegiatan {
 }
 
 model Bagian {
-  id        String   @id @default(cuid())
+  id        String   @id
   nama      String   @unique
   kode      String?
   isActive  Boolean  @default(true)
@@ -99,4 +100,24 @@ model JenisKonsumsi {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model SesiWaktu {
+  id        String   @id
+  nama      String   @unique
+  urutan    Int?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Menu {
+  id          String   @id
+  nama        String
+  sesiWaktu   String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([nama, sesiWaktu])
 }

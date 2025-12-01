@@ -15,7 +15,7 @@ async function updateUser() {
       where: { username: 'nadia' },
       data: {
         email: 'nadia@demplon.com',
-        passwordHash,
+        password: passwordHash,
       },
     });
     
