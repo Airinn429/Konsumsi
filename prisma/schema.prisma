@@ -57,7 +57,7 @@ model ConsumptionItem {
 
 
 model JenisKegiatan {
-  id        String   @id
+  id        String   @id  @default(cuid())
   nama      String   @unique
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -65,7 +65,7 @@ model JenisKegiatan {
 }
 
 model Bagian {
-  id        String   @id
+  id        String   @id @default(cuid())
   nama      String   @unique
   kode      String?
   isActive  Boolean  @default(true)
@@ -74,7 +74,7 @@ model Bagian {
 }
 
 model Approver {
-  id        String   @id
+  id        String   @id  @default(cuid())
   nama      String
   nip       String   @unique
   jabatan   String?
@@ -84,7 +84,7 @@ model Approver {
 }
 
 model Lokasi {
-  id        String   @id
+  id        String   @id @default(cuid())
   nama      String   @unique
   kategori  String?
   isActive  Boolean  @default(true)
@@ -93,7 +93,7 @@ model Lokasi {
 }
 
 model JenisKonsumsi {
-  id            String   @id
+  id            String   @id @default(cuid())
   nama          String   @unique
   kategori      String?
   satuanDefault String   @default("Porsi")
@@ -103,7 +103,7 @@ model JenisKonsumsi {
 }
 
 model SesiWaktu {
-  id        String   @id
+  id        String   @id @default(cuid())
   nama      String   @unique
   urutan    Int?
   isActive  Boolean  @default(true)
@@ -112,7 +112,7 @@ model SesiWaktu {
 }
 
 model Menu {
-  id          String   @id
+  id          String   @id @default(cuid())
   nama        String
   sesiWaktu   String
   isActive    Boolean  @default(true)
