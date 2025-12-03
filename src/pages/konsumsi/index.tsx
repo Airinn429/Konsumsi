@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -19,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 // [DIPERBAIKI] Mengembalikan DialogTrigger dan DialogClose ke impor
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
+import type { DateRange } from "react-day-picker";
 import {
     Calendar as CalendarIcon,
     Loader2,
@@ -49,17 +51,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { DateRange } from "react-day-picker";
-// Sidebar components are provided via the global AppLayout for pages (see src/components/app-layout.tsx)
 
-
-
-
-// (removed unused tailwind placeholder)
-
-// =========================================================================
-// 1. DEFINISI TIPE DATA DAN MOCK DATA
-// =========================================================================
+//tipe data
 type OrderStatus = 'Pending' | 'Approved' | 'Rejected' | 'Draft' | 'Cancelled';
 
 interface ConsumptionItemData {
@@ -71,7 +64,7 @@ interface ConsumptionItemData {
     waktu: string;
 }
 
-// [BARU] Struktur data untuk sub-item (Jenis Konsumsi)
+// Struktur data untuk sub-item (Jenis Konsumsi)
 interface ConsumptionSubItem {
     id: string;
     jenisKonsumsi: string;
@@ -92,7 +85,7 @@ interface ConsumptionGroup {
 // UPDATED: Order interface (struktur data final) tetap sama
 interface Order {
     id: string;
-    orderNumber: string; // [ADDED] Order number from database (KSM-001, KSM-002, etc.)
+    orderNumber: string; //Order number from database (KSM-001, KSM-002, etc.)
     kegiatan: string;
     tanggalPengiriman: Date;
     status: OrderStatus;
@@ -290,7 +283,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onV
                             <CommandItem
                                 key={option}
                                 value={option}
-                                onSelect={(currentValue) => {
+                                onSelect={(currentValue : string) => {
                                     onValueChange(currentValue === value ? "" : currentValue);
                                     setOpen(false);
                                 }}
@@ -308,6 +301,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onV
                 </Command>
             </PopoverContent>
         </Popover>
+    
     );
 };
 
@@ -1884,7 +1878,7 @@ export default function ConsumptionOrderPage() {
             />
 
             {/* Form sekarang berada di dalam Dialog Modal */}
-            <Dialog open={isFormVisible} onOpenChange={(isOpen) => {
+            <Dialog open={isFormVisible} onOpenChange={(isOpen : boolean) => {
                 if (!isOpen) { 
                     setIsSuccessful(false); 
                 }
@@ -1905,8 +1899,3 @@ export default function ConsumptionOrderPage() {
         </div>
     );
 }
-
-
-
-
-
