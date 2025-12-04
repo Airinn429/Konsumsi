@@ -1,6 +1,6 @@
-import { PrismaClient } from "@prisma/client";
-import { randomUUID } from "crypto";
-import { hashPassword } from "../src/lib/password";
+const { PrismaClient } = require("@prisma/client");
+const { randomUUID } = require("crypto");
+const { hashPassword } = require("../src/lib/password");
 
 const prisma = new PrismaClient();
 
@@ -9,340 +9,139 @@ async function main() {
 
   // ====================== USER ======================
   console.log("👤 Menambahkan users...");
-  const adminPassword = await hashPassword("admin123");
-  await prisma.user.upsert({
-    where: { username: "admin" },
-    update: {},
-    create: { 
-      id: randomUUID(), 
-      username: "admin", 
-      name: "Administrator", 
+
+  const users = [
+    {
+      username: "admin",
+      name: "Administrator",
       email: "admin@demplon.com",
-      password: adminPassword,
-      role: "admin"
-    }
-  });
-
-  const nadiaPassword = await hashPassword("123456");
-  await prisma.user.upsert({
-    where: { username: "nadia" },
-    update: {},
-    create: { 
-      id: randomUUID(), 
-      username: "nadia", 
-      name: "Nadia Addnan", 
+      password: await hashPassword("admin123"),
+      role: "admin",
+    },
+    {
+      username: "nadia",
+      name: "Nadia Addnan",
       email: "nadia@demplon.com",
-      password: nadiaPassword,
-      role: "user"
-    }
-  });
-
-  const fauziPassword = await hashPassword("654321");
-  await prisma.user.upsert({
-    where: { username: "fauzi" },
-    update: {},
-    create: { 
-      id: randomUUID(), 
-      username: "fauzi", 
-      name: "Fauzi", 
+      password: await hashPassword("123456"),
+      role: "user",
+    },
+    {
+      username: "fauzi",
+      name: "Fauzi",
       email: "fauzi@demplon.com",
-      password: fauziPassword,
-      role: "user"
-    }
-  });
-
-  const dikaPassword = await hashPassword("112233");
-  await prisma.user.upsert({
-    where: { username: "dika" },
-    update: {},
-    create: { 
-      id: randomUUID(), 
-      username: "dika", 
-      name: "Dika", 
+      password: await hashPassword("654321"),
+      role: "user",
+    },
+    {
+      username: "dika",
+      name: "Dika",
       email: "dika@demplon.com",
-      password: dikaPassword,
-      role: "user"
-    }
-  });
+      password: await hashPassword("112233"),
+      role: "user",
+    },
+  ];
+
+  for (const u of users) {
+    await prisma.user.upsert({
+      where: { username: u.username },
+      update: {},
+      create: { id: randomUUID(), ...u },
+    });
+  }
 
   // ====================== BAGIAN ======================
   console.log("📋 Menambahkan bagian...");
-  const existingBagian = await prisma.bagian.findFirst({ where: { nama: "Teknologi Informasi" } });
-  if (!existingBagian) {
-    await prisma.bagian.createMany({
-      data: [
-        { id: randomUUID(), nama: "Teknologi Informasi" },
-      ]
-    });
-  }
+
+  await prisma.bagian.createMany({
+    data: [{ id: randomUUID(), nama: "Teknologi Informasi" }],
+    skipDuplicates: true
+  });
 
   // ====================== JENIS KEGIATAN ======================
   console.log("📋 Menambahkan jenis kegiatan...");
-  const existingKegiatan = await prisma.jenisKegiatan.count();
-  if (existingKegiatan === 0) {
-    await prisma.jenisKegiatan.createMany({
-      data: [
-        { id: randomUUID(), nama: "Bahan Minum Karyawan" },
-        { id: randomUUID(), nama: "Baporkes" },
-        { id: randomUUID(), nama: "BK3N" },
-        { id: randomUUID(), nama: "Extra Fooding" },
-        { id: randomUUID(), nama: "Extra Fooding Shift" },
-        { id: randomUUID(), nama: "Extra Fooding SKJ" },
-        { id: randomUUID(), nama: "Festival Inovasi" },
-        { id: randomUUID(), nama: "Halal Bi Halal" },
-        { id: randomUUID(), nama: "Hari Guru" },
-        { id: randomUUID(), nama: "Hari Raya Idu Adha" },
-        { id: randomUUID(), nama: "Hari Raya Idul Fitri" },
-        { id: randomUUID(), nama: "HUT PKC" },
-        { id: randomUUID(), nama: "HUT RI" },
-        { id: randomUUID(), nama: "Jamuan Diluar Kawasan" },
-        { id: randomUUID(), nama: "Jamuan Tamu Perusahaan" },
-        { id: randomUUID(), nama: "Jumat Bersih" },
-        { id: randomUUID(), nama: "Kajian Rutin" },
-        { id: randomUUID(), nama: "Ketupat Lebaran" },
-        { id: randomUUID(), nama: "Konsumsi Buka Puasa" },
-        { id: randomUUID(), nama: "Konsumsi Makan Sahur" },
-        { id: randomUUID(), nama: "Konsumsi TA" },
-        { id: randomUUID(), nama: "Lain-lain Jamuan Tamu" },
-        { id: randomUUID(), nama: "Lain-lain Perayaan" },
-        { id: randomUUID(), nama: "Lain-lain Rapat Kantor" },
-        { id: randomUUID(), nama: "Lembur Perta" },
-        { id: randomUUID(), nama: "Lembur Rutin" },
-        { id: randomUUID(), nama: "Lembur Shutdown" },
-        { id: randomUUID(), nama: "Not Defined" },
-        { id: randomUUID(), nama: "Nuzurul Quran" },
-        { id: randomUUID(), nama: "Open Storage" },
-        { id: randomUUID(), nama: "Pengajian Keliling" },
-        { id: randomUUID(), nama: "Pengantongan Akhir Tahun" },
-        { id: randomUUID(), nama: "Pengembangan SDM" },
-        { id: randomUUID(), nama: "PKM Masjid Nahlul Hayat" },
-        { id: randomUUID(), nama: "Program Akhlak" },
-        { id: randomUUID(), nama: "Program Makmur" },
-        { id: randomUUID(), nama: "Program WMS" },
-        { id: randomUUID(), nama: "Proper Emas" },
-        { id: randomUUID(), nama: "Proyek Replacament K1A & NZE" },
-        { id: randomUUID(), nama: "Rakor Direksi Anper PI Group" },
-        { id: randomUUID(), nama: "Rapat Direksi" },
-        { id: randomUUID(), nama: "Rapat Distribusi B" },
-        { id: randomUUID(), nama: "Rapat Distribusi D" },
-        { id: randomUUID(), nama: "Rapat Gabungan Dekom, Direksi, SVP" },
-        { id: randomUUID(), nama: "Rapat Internal" },
-        { id: randomUUID(), nama: "Rapat Komite Audit" },
-        { id: randomUUID(), nama: "Rapat LKS Bipartit" },
-        { id: randomUUID(), nama: "Rapat Monitoring Anper PKC" },
-        { id: randomUUID(), nama: "Rapat Pra RUPS" },
-        { id: randomUUID(), nama: "Rapat Tamu" },
-        { id: randomUUID(), nama: "Rumah Tahfidz" },
-        { id: randomUUID(), nama: "Safari Malam Takbiran" },
-        { id: randomUUID(), nama: "Safari Ramadhan" },
-        { id: randomUUID(), nama: "Shutdwon Pabrik" },
-        { id: randomUUID(), nama: "SP2K" },
-        { id: randomUUID(), nama: "Srikandi PKC" },
-        { id: randomUUID(), nama: "Tablig Akbar" },
-        { id: randomUUID(), nama: "Washing Pabrik" }
-      ]
-    });
-  }
 
+  const jenisKegiatanList = [
+    "Bahan Minum Karyawan","Baporkes","BK3N","Extra Fooding","Extra Fooding Shift","Extra Fooding SKJ",
+    "Festival Inovasi","Halal Bi Halal","Hari Guru","Hari Raya Idu Adha","Hari Raya Idul Fitri","HUT PKC",
+    "HUT RI","Jamuan Diluar Kawasan","Jamuan Tamu Perusahaan","Jumat Bersih","Kajian Rutin","Ketupat Lebaran",
+    "Konsumsi Buka Puasa","Konsumsi Makan Sahur","Konsumsi TA","Lain-lain Jamuan Tamu","Lain-lain Perayaan",
+    "Lain-lain Rapat Kantor","Lembur Perta","Lembur Rutin","Lembur Shutdown","Not Defined","Nuzurul Quran",
+    "Open Storage","Pengajian Keliling","Pengantongan Akhir Tahun","Pengembangan SDM","PKM Masjid Nahlul Hayat",
+    "Program Akhlak","Program Makmur","Program WMS","Proper Emas","Proyek Replacament K1A & NZE",
+    "Rakor Direksi Anper PI Group","Rapat Direksi","Rapat Distribusi B","Rapat Distribusi D",
+    "Rapat Gabungan Dekom, Direksi, SVP","Rapat Internal","Rapat Komite Audit","Rapat LKS Bipartit",
+    "Rapat Monitoring Anper PKC","Rapat Pra RUPS","Rapat Tamu","Rumah Tahfidz","Safari Malam Takbiran",
+    "Safari Ramadhan","Shutdwon Pabrik","SP2K","Srikandi PKC","Tablig Akbar","Washing Pabrik"
+  ];
 
-  
+  await prisma.jenisKegiatan.createMany({
+    data: jenisKegiatanList.map(nama => ({ id: randomUUID(), nama })),
+    skipDuplicates: true
+  });
+
   // ====================== APPROVER ======================
   console.log("📋 Menambahkan approver...");
-  const existingApprover = await prisma.approver.count();
-  if (existingApprover === 0) {
-    await prisma.approver.createMany({
-      data: [
-        { id: randomUUID(), nama: "Arief Darmawan", nip: "3072535" },
-        { id: randomUUID(), nama: "Anggita Maya Septianingsih", nip: "3082589" },
-        { id: randomUUID(), nama: "Agung Gustiawan", nip: "3092789" },
-        { id: randomUUID(), nama: "Andika Arif Rachman", nip: "3082592" },
-        { id: randomUUID(), nama: "Ardhimas Yuda Baskoro", nip: "3042172" },
-        { id: randomUUID(), nama: "Amin Puji Hariyanto", nip: "3133210" },
-        { id: randomUUID(), nama: "Andi Komara", nip: "3072517" },
-        { id: randomUUID(), nama: "Desra Heriman", nip: "3072531" },
-        { id: randomUUID(), nama: "Danang Siswantoro", nip: "3052402" },
-        { id: randomUUID(), nama: "Dady Rahman", nip: "3052404" },
-        { id: randomUUID(), nama: "Dian Ramdani", nip: "3082628" },
-        { id: randomUUID(), nama: "Dede Sopian", nip: "3072524" },
-        { id: randomUUID(), nama: "Dian Risdiana", nip: "3072532" },
-        { id: randomUUID(), nama: "Dodi Pramadi", nip: "3972081" },
-        { id: randomUUID(), nama: "Eka Priyatna", nip: "3102904" },
-        { id: randomUUID(), nama: "Fika Hikmaturrahman", nip: "3123195" },
-        { id: randomUUID(), nama: "Fajar Nugraha", nip: "3022134" },
-        { id: randomUUID(), nama: "Freddy Harianto", nip: "3072526" },
-        { id: randomUUID(), nama: "Febri Rubragandi N", nip: "3052400" },
-        { id: randomUUID(), nama: "Flan Adi Nugraha Suhara", nip: "3052394" },
-        { id: randomUUID(), nama: "Gina Amarilis", nip: "3082590" },
-        { id: randomUUID(), nama: "Henisya Permata Sari", nip: "3072498" },
-        { id: randomUUID(), nama: "Hikmat Rachmatullah", nip: "3072497" },
-        { id: randomUUID(), nama: "Handi Rustian", nip: "3072485" },
-        { id: randomUUID(), nama: "Iswahyudi Mertosono", nip: "3082594" },
-        { id: randomUUID(), nama: "Indra Irianto", nip: "3022136" },
-        { id: randomUUID(), nama: "Ira Purnama Sari", nip: "3072489" },
-        { id: randomUUID(), nama: "Ibrahim Herlambang", nip: "3072488" },
-        { id: randomUUID(), nama: "Jojok Satriadi", nip: "1140122" },
-        { id: randomUUID(), nama: "Jondra", nip: "3052403" },
-        { id: randomUUID(), nama: "Kholiq Iman Santoso", nip: "3253473" },
-        { id: randomUUID(), nama: "Kasmadi", nip: "3072494" },
-        { id: randomUUID(), nama: "Lala", nip: "3072542" },
-        { id: randomUUID(), nama: "Luthfianto Ardian", nip: "3022127" },
-        { id: randomUUID(), nama: "Mohammad Arief Rachman", nip: "3932032" },
-        { id: randomUUID(), nama: "Mulky Wahyudhy", nip: "3082591" },
-        { id: randomUUID(), nama: "Mita Yasmitahati", nip: "3072527" },
-        { id: randomUUID(), nama: "Mohammad Gani", nip: "3092756" },
-        { id: randomUUID(), nama: "Muhammad Ikhsan Anshori", nip: "3133237" },
-        { id: randomUUID(), nama: "Muhammad Yudi Prasetyo", nip: "3072487" },
-        { id: randomUUID(), nama: "Muh. Arifin Hakim Nuryadin", nip: "3972097" },
-        { id: randomUUID(), nama: "Nugraha Agung Wibowo", nip: "3133236" },
-        { id: randomUUID(), nama: "Probo Condrosari", nip: "3072490" },
-        { id: randomUUID(), nama: "Raden Sulistyo", nip: "3072491" },
-        { id: randomUUID(), nama: "R. Idho Pramana Sembada", nip: "3072545" },
-        { id: randomUUID(), nama: "Rosy Indra Saputra", nip: "3072496" },
-        { id: randomUUID(), nama: "Refan Anggasatriya", nip: "3082597" },
-        { id: randomUUID(), nama: "Ronald Irwanto", nip: "3123084" },
-        { id: randomUUID(), nama: "Rahayu Ginanjar Siwi", nip: "3123205" },
-        { id: randomUUID(), nama: "Shinta Narulita", nip: "3082579" },
-        { id: randomUUID(), nama: "Soni Ridho Atmaja", nip: "3082583" },
-        { id: randomUUID(), nama: "Sundawa", nip: "3082584" },
-        { id: randomUUID(), nama: "Syarifudin", nip: "3052401" },
-        { id: randomUUID(), nama: "Toni Gunawan", nip: "3042442" },
-        { id: randomUUID(), nama: "Yoyon Daryono", nip: "3072495" },
-        { id: randomUUID(), nama: "Yayan Taryana", nip: "3123091" },
-        { id: randomUUID(), nama: "Yara Budhi Widowati", nip: "3123085" },
-        { id: randomUUID(), nama: "Zaki Faishal Aziz", nip: "3042168" }
-      ]
-    });
-  }
 
+  const approverList = [
+    ["Arief Darmawan","3072535"],["Anggita Maya Septianingsih","3082589"],["Agung Gustiawan","3092789"],
+    ["Andika Arif Rachman","3082592"],["Ardhimas Yuda Baskoro","3042172"],["Amin Puji Hariyanto","3133210"],
+    ["Andi Komara","3072517"],["Desra Heriman","3072531"],["Danang Siswantoro","3052402"],
+    ["Dady Rahman","3052404"],["Dian Ramdani","3082628"],["Dede Sopian","3072524"],
+    ["Dian Risdiana","3072532"],["Dodi Pramadi","3972081"],["Eka Priyatna","3102904"],
+    ["Fika Hikmaturrahman","3123195"],["Fajar Nugraha","3022134"],["Freddy Harianto","3072526"],
+    ["Febri Rubragandi N","3052400"],["Flan Adi Nugraha Suhara","3052394"],["Gina Amarilis","3082590"],
+    ["Henisya Permata Sari","3072498"],["Hikmat Rachmatullah","3072497"],["Handi Rustian","3072485"],
+    ["Iswahyudi Mertosono","3082594"],["Indra Irianto","3022136"],["Ira Purnama Sari","3072489"],
+    ["Ibrahim Herlambang","3072488"],["Jojok Satriadi","1140122"],["Jondra","3052403"],
+    ["Kholiq Iman Santoso","3253473"],["Kasmadi","3072494"],["Lala","3072542"],
+    ["Luthfianto Ardian","3022127"],["Mohammad Arief Rachman","3932032"],["Mulky Wahyudhy","3082591"],
+    ["Mita Yasmitahati","3072527"],["Mohammad Gani","3092756"],["Muhammad Ikhsan Anshori","3133237"],
+    ["Muhammad Yudi Prasetyo","3072487"],["Muh. Arifin Hakim Nuryadin","3972097"],["Nugraha Agung Wibowo","3133236"],
+    ["Probo Condrosari","3072490"],["Raden Sulistyo","3072491"],["R. Idho Pramana Sembada","3072545"],
+    ["Rosy Indra Saputra","3072496"],["Refan Anggasatriya","3082597"],["Ronald Irwanto","3123084"],
+    ["Rahayu Ginanjar Siwi","3123205"],["Shinta Narulita","3082579"],["Soni Ridho Atmaja","3082583"],
+    ["Sundawa","3082584"],["Syarifudin","3052401"],["Toni Gunawan","3042442"],
+    ["Yoyon Daryono","3072495"],["Yayan Taryana","3123091"],["Yara Budhi Widowati","3123085"],
+    ["Zaki Faishal Aziz","3042168"]
+  ];
+
+  await prisma.approver.createMany({
+    data: approverList.map(([nama, nip]) => ({ id: randomUUID(), nama, nip })),
+    skipDuplicates: true
+  });
 
   // ====================== LOKASI ======================
   console.log("📋 Menambahkan lokasi...");
-  const existingLokasi = await prisma.lokasi.count();
-  if (existingLokasi === 0) {
-    await prisma.lokasi.createMany({
-      data: [
-        { id: randomUUID(), nama: "Bagging" },
-        { id: randomUUID(), nama: "CCB" },
-        { id: randomUUID(), nama: "Club House" },
-        { id: randomUUID(), nama: "Departemen Riset" },
-        { id: randomUUID(), nama: "Gedung 101-K" },
-        { id: randomUUID(), nama: "Gedung Anggrek" },
-        { id: randomUUID(), nama: "Gedung Bidding Center" },
-        { id: randomUUID(), nama: "Gedung Contraction Office" },
-        { id: randomUUID(), nama: "Gedung K3" },
-        { id: randomUUID(), nama: "Gedung LC" },
-        { id: randomUUID(), nama: "Gedung Maintanance Office" },
-        { id: randomUUID(), nama: "Gedung Mawar" },
-        { id: randomUUID(), nama: "Gedung Melati" },
-        { id: randomUUID(), nama: "Gedung Purna Bhakti" },
-        { id: randomUUID(), nama: "Gedung Pusat Administrasi" },
-        { id: randomUUID(), nama: "Gedung RPK" },
-        { id: randomUUID(), nama: "Gedung Saorga" },
-        { id: randomUUID(), nama: "GH-B" },
-        { id: randomUUID(), nama: "GH-C" },
-        { id: randomUUID(), nama: "GPA Lt-3" },
-        { id: randomUUID(), nama: "Gudang Bahan Baku" },
-        { id: randomUUID(), nama: "Gudang Bulk Material" },
-        { id: randomUUID(), nama: "Gedung Suku Cadang" },
-        { id: randomUUID(), nama: "Jakarta" },
-        { id: randomUUID(), nama: "Kantor SP2K" },
-        { id: randomUUID(), nama: "Kebon Bibit" },
-        { id: randomUUID(), nama: "Klinik PT HPH" },
-        { id: randomUUID(), nama: "Kolam Pancing Type B" },
-        { id: randomUUID(), nama: "Kolam Renang" },
-        { id: randomUUID(), nama: "Kujang Kampioen Riset" },
-        { id: randomUUID(), nama: "Laboraturium/Main Lab" },
-        { id: randomUUID(), nama: "Lapang Basket Type B" },
-        { id: randomUUID(), nama: "Lapang Futsal" },
-        { id: randomUUID(), nama: "Lapang Sepak Bola Type E" },
-        { id: randomUUID(), nama: "Lapang Tenis Type B" },
-        { id: randomUUID(), nama: "Lapang Volly Type E" },
-        { id: randomUUID(), nama: "Lapangan Helipad" },
-        { id: randomUUID(), nama: "Lapangan Panahan" },
-        { id: randomUUID(), nama: "Lapangan Volley" },
-        { id: randomUUID(), nama: "Mekanik K1A" },
-        { id: randomUUID(), nama: "Mekanik K1B" },
-        { id: randomUUID(), nama: "Not Defined" },
-        { id: randomUUID(), nama: "NPK-2" },
-        { id: randomUUID(), nama: "Pos Selatan 01" },
-        { id: randomUUID(), nama: "Posko Pengamanan Bawah" },
-        { id: randomUUID(), nama: "Ruang Rapat NPK-1" },
-        { id: randomUUID(), nama: "Ruang Rapat NPK-2" },
-        { id: randomUUID(), nama: "Utility K-1A" },
-        { id: randomUUID(), nama: "Wisma Kujang" }
-      ]
-    });
-  }
 
+  const lokasiList = [
+    "Bagging","CCB","Club House","Departemen Riset","Gedung 101-K","Gedung Anggrek","Gedung Bidding Center",
+    "Gedung Contraction Office","Gedung K3","Gedung LC","Gedung Maintanance Office","Gedung Mawar",
+    "Gedung Melati","Gedung Purna Bhakti","Gedung Pusat Administrasi","Gedung RPK","Gedung Saorga",
+    "GH-B","GH-C","GPA Lt-3","Gudang Bahan Baku","Gudang Bulk Material","Gedung Suku Cadang","Jakarta",
+    "Kantor SP2K","Kebon Bibit","Klinik PT HPH","Kolam Pancing Type B","Kolam Renang","Kujang Kampioen Riset",
+    "Laboraturium/Main Lab","Lapang Basket Type B","Lapang Futsal","Lapang Sepak Bola Type E",
+    "Lapang Tenis Type B","Lapang Volly Type E","Lapangan Helipad","Lapangan Panahan","Lapangan Volley",
+    "Mekanik K1A","Mekanik K1B","Not Defined","NPK-2","Pos Selatan 01","Posko Pengamanan Bawah",
+    "Ruang Rapat NPK-1","Ruang Rapat NPK-2","Utility K-1A","Wisma Kujang"
+  ];
+
+  await prisma.lokasi.createMany({
+    data: lokasiList.map(nama => ({ id: randomUUID(), nama })),
+    skipDuplicates: true
+  });
 
   // ====================== JENIS KONSUMSI ======================
-  console.log("📋 Menambahkan jenis konsumsi (Tipe Tamu)...");
-  const existingJenisKonsumsi = await prisma.jenisKonsumsi.count();
-  if (existingJenisKonsumsi === 0) {
-    await prisma.jenisKonsumsi.createMany({
-      data: [
-        { id: randomUUID(), nama: "PERTA" },
-        { id: randomUUID(), nama: "Regular" },
-        { id: randomUUID(), nama: "Standar" },
-        { id: randomUUID(), nama: "VIP" },
-        { id: randomUUID(), nama: "VVIP" }
-      ]
-    });
-  }
+  console.log("📋 Menambahkan jenis konsumsi...");
 
-  // ====================== SESI WAKTU ======================
-  console.log("📋 Menambahkan sesi waktu...");
-  const existingSesiWaktu = await prisma.sesiWaktu.count();
-  if (existingSesiWaktu === 0) {
-    await prisma.sesiWaktu.createMany({
-      data: [
-        { id: randomUUID(), nama: "Pagi", urutan: 1 },
-        { id: randomUUID(), nama: "Siang", urutan: 2 },
-        { id: randomUUID(), nama: "Sore", urutan: 3 },
-        { id: randomUUID(), nama: "Malam", urutan: 4 },
-        { id: randomUUID(), nama: "Sahur", urutan: 5 },
-        { id: randomUUID(), nama: "Buka Puasa", urutan: 6 },
-        { id: randomUUID(), nama: "Snack Malam", urutan: 7 },
-        { id: randomUUID(), nama: "Tengah Malam", urutan: 8 }
-      ]
-    });
-  }
+  const jenisKonsumsi = ["PERTA","Regular","Standar","VIP","VVIP"];
 
-  // ====================== MENU ======================
-  console.log("📋 Menambahkan menu...");
-  const existingMenu = await prisma.menu.count();
-  if (existingMenu === 0) {
-    const menuData = [
-      // Menu Pagi
-      ...["Ayam Goreng", "Anggur", "Air Mineral", "Snack Kering", "Snack Pagi", "GKT", "Ketupat Lebaran", "Permen", "Mie Instan", "Teh Sariwangi", "Nescafe", "Roti Manis", "Snack Box", "Kopi Kapal Api Special Mix", "Indocafe Coffemix", "Paket Sembako", "Buah-Buahan", "Creamer", "Teh Celup", "Milo", "Telor Rebus", "Jamuan Diluar Kawasan", "Susu Ultra", "Jeruk Manis", "Pisang Sunpride", "Nasi Putih/Timbel", "Sate Maranggi Sapi", "Parasmanan", "Pocari Sweat", "Teh Kotak", "Aneka Pepes"].map(menu => ({ id: randomUUID(), nama: menu, sesiWaktu: "Pagi" })),
-      
-      // Menu Siang
-      ...["Nasi Box", "Prasmanan", "Ayam Goreng", "Anggur", "Air Mineral", "Snack Kering", "Snack Pagi", "GKT", "Ketupat Lebaran", "Permen", "Mie Instan", "Teh Sariwangi", "Nescafe", "Roti Manis", "Snack", "Kopi Kapal Api Special Mix", "Indocafe Coffemix", "Paket Sembako", "Buah-Buahan", "Creamer", "Teh Celup", "Milo", "Telor Rebus", "Jamuan Diluar Kawasan", "Susu Ultra", "Jeruk Manis", "Pisang Sunpride", "Nasi Putih/Timbel", "Sate Maranggi Sapi", "Parasmanan", "Pocari Sweat", "Teh Kotak", "Aneka Pepes"].map(menu => ({ id: randomUUID(), nama: menu, sesiWaktu: "Siang" })),
-      
-      // Menu Sore
-      ...["Snack Box", "Coffee Break", "Ayam Goreng", "Anggur", "Air Mineral", "Snack Kering", "Snack Pagi", "GKT", "Ketupat Lebaran", "Permen", "Mie Instan", "Teh Sariwangi", "Nescafe", "Roti Manis", "Snack", "Kopi Kapal Api Special Mix", "Indocafe Coffemix", "Paket Sembako", "Buah-Buahan", "Creamer", "Teh Celup", "Milo", "Telor Rebus", "Jamuan Diluar Kawasan", "Susu Ultra", "Jeruk Manis", "Pisang Sunpride", "Nasi Putih/Timbel", "Sate Maranggi Sapi", "Parasmanan", "Pocari Sweat", "Teh Kotak", "Aneka Pepes"].map(menu => ({ id: randomUUID(), nama: menu, sesiWaktu: "Sore" })),
-      
-      // Menu Malam
-      ...["Nasi Box", "Prasmanan", "Ayam Goreng", "Anggur", "Air Mineral", "Snack Kering", "Snack Pagi", "GKT", "Ketupat Lebaran", "Permen", "Mie Instan", "Teh Sariwangi", "Nescafe", "Roti Manis", "Snack", "Kopi Kapal Api Special Mix", "Indocafe Coffemix", "Paket Sembako", "Buah-Buahan", "Creamer", "Teh Celup", "Milo", "Telor Rebus", "Jamuan Diluar Kawasan", "Susu Ultra", "Jeruk Manis", "Pisang Sunpride", "Nasi Putih/Timbel", "Sate Maranggi Sapi", "Parasmanan", "Pocari Sweat", "Teh Kotak", "Aneka Pepes"].map(menu => ({ id: randomUUID(), nama: menu, sesiWaktu: "Malam" })),
-      
-      // Menu Sahur
-      ...["Nasi Box", "Ayam Gorenng", "Sate Maranggi Sapi", "Air Mineral", "Buah-buahan"].map(menu => ({ id: randomUUID(), nama: menu, sesiWaktu: "Sahur" })),
-      
-      // Menu Buka Puasa
-      ...["Nasi Box", "Prasmanan", "Takjil"].map(menu => ({ id: randomUUID(), nama: menu, sesiWaktu: "Buka Puasa" })),
-      
-      // Menu Snack Malam
-      ...["Snack Box", "Nescafe", "Kopi"].map(menu => ({ id: randomUUID(), nama: menu, sesiWaktu: "Snack Malam" })),
-      
-      // Menu Tengah Malam
-      ...["Nasi Box", "Nescafe", "Kopi", "Ayam Goreng"].map(menu => ({ id: randomUUID(), nama: menu, sesiWaktu: "Tengah Malam" }))
-    ];
+  await prisma.jenisKonsumsi.createMany({
+    data: jenisKonsumsi.map(nama => ({ id: randomUUID(), nama })),
+    skipDuplicates: true
+  });
 
-    await prisma.menu.createMany({ data: menuData });
-  }
-  
-
-  console.log("\n✅ SEEDING BERHASIL!");
+  // ====================== SELESAI ======================
+  console.log("\n✅ SEEDING BERHASIL (sekali saja)!");
 }
 
 main()

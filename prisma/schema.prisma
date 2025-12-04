@@ -1,14 +1,15 @@
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DB_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
-
 model User {
-  id            String @id @default(cuid())
+  id            String   @id @default(cuid())
   username      String   @unique
   name          String
   email         String?  @unique
@@ -42,7 +43,7 @@ model Order {
 }
 
 model ConsumptionItem {
-  id              String @id @default(cuid())
+  id               String @id @default(cuid())
   jenisKonsumsi    String
   qty              Int
   satuan           String
@@ -50,14 +51,12 @@ model ConsumptionItem {
   sesiWaktu        String
   waktu            String
 
-  orderId          String     
-  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
-
-
 model JenisKegiatan {
-  id        String   @id  @default(cuid())
+  id        String   @id @default(cuid())
   nama      String   @unique
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -74,7 +73,7 @@ model Bagian {
 }
 
 model Approver {
-  id        String   @id  @default(cuid())
+  id        String   @id @default(cuid())
   nama      String
   nip       String   @unique
   jabatan   String?
@@ -112,12 +111,12 @@ model SesiWaktu {
 }
 
 model Menu {
-  id          String   @id @default(cuid())
-  nama        String
-  sesiWaktu   String
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  nama      String
+  sesiWaktu String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([nama, sesiWaktu])
 }

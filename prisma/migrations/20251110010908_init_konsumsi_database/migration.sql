@@ -8,7 +8,6 @@ CREATE TABLE "User" (
     "role" TEXT NOT NULL DEFAULT 'user',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
@@ -30,7 +29,6 @@ CREATE TABLE "Order" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "cancelledAt" TIMESTAMP(3),
     "cancelReason" TEXT,
-
     CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
 );
 
@@ -42,7 +40,6 @@ CREATE TABLE "OrderItem" (
     "quantity" INTEGER NOT NULL,
     "unit" TEXT NOT NULL,
     "notes" TEXT,
-
     CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
 );
 
@@ -55,9 +52,10 @@ CREATE TABLE "MenuItem" (
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "MenuItem_pkey" PRIMARY KEY ("id")
-    -- CreateTable
+);
+
+-- CreateTable
 CREATE TABLE "SesiWaktu" (
     "id" TEXT NOT NULL,
     "nama" TEXT NOT NULL,
@@ -65,7 +63,6 @@ CREATE TABLE "SesiWaktu" (
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "SesiWaktu_pkey" PRIMARY KEY ("id")
 );
 
@@ -77,7 +74,6 @@ CREATE TABLE "Menu" (
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "Menu_pkey" PRIMARY KEY ("id")
 );
 
@@ -86,8 +82,6 @@ CREATE UNIQUE INDEX "SesiWaktu_nama_key" ON "SesiWaktu"("nama");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Menu_nama_sesiWaktu_key" ON "Menu"("nama", "sesiWaktu");
-
-);
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
@@ -99,7 +93,11 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 CREATE UNIQUE INDEX "Order_orderNumber_key" ON "Order"("orderNumber");
 
 -- AddForeignKey
-ALTER TABLE "Order" ADD CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Order"
+ADD CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId")
+REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "OrderItem"
+ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId")
+REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;

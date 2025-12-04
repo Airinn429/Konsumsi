@@ -1,3 +1,0 @@
-Klik "User" di sidebar
-→ Lihat user "admin" dan "nadia" dari seed
-GET http://localhost:3001/api/orders
