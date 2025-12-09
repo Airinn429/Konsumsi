@@ -358,7 +358,7 @@ const OrderCard: React.FC<{ order: Order; onViewDetails: (order: Order) => void;
     const firstItem = order.items[0];
 
     return (
-        <Card className="w-full h-full flex flex-col shadow-md transition-all duration-300 group hover:shadow-xl hover:shadow-violet-500/10 hover:-translate-y-1 relative overflow-hidden border">
+        <Card className="w-full h-full flex flex-col shadow-md transition-all duration-300 group hover:shadow-xl hover:shadow-violet-500/10 hover:-translate-y-1 relative verflow-y-auto border">
             <CardHeader className="p-4 pb-2 flex-row items-start justify-between border-b">
                 <div className="flex flex-col space-y-1">
                     <CardTitle className="text-sm font-bold text-violet-600 dark:text-violet-400">{order.id}</CardTitle>
@@ -962,7 +962,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                                     </div>
                                     <AnimatePresence>
                                         {formData.kegiatan === 'Lainnya' && (
-                                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }} className="space-y-2 overflow-hidden">
+                                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }} className="space-y-2 verflow-y-auto">
                                                 <Label htmlFor="kegiatanLainnya">Sebutkan Nama Kegiatan</Label>
                                                 <Input id="kegiatanLainnya" placeholder="Contoh: Peresmian Kantor Cabang Baru" value={formData.kegiatanLainnya} onChange={(e) => handleChange('kegiatanLainnya', e.target.value)} className={cn({ "border-red-500": errors.kegiatanLainnya })} />
                                                 {errors.kegiatanLainnya && <p className="text-xs text-red-600">{errors.kegiatanLainnya}</p>}
