@@ -7,17 +7,10 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🚀 Mulai seeding database...\n");
 
-  // ====================== USER ======================
+  // USER
   console.log("👤 Menambahkan users...");
 
   const users = [
-    {
-      username: "admin",
-      name: "Administrator",
-      email: "admin@demplon.com",
-      password: await hashPassword("admin123"),
-      role: "admin",
-    },
     {
       username: "nadia",
       name: "Nadia Addnan",
@@ -39,6 +32,13 @@ async function main() {
       password: await hashPassword("112233"),
       role: "user",
     },
+     {
+      username: "Riza Ilhamsyah",
+      name: "Riza Ilhamsyah",
+      email: "riza@demplon.com",
+      password: await hashPassword("12231149"),
+      role: "user",
+    },
   ];
 
   for (const u of users) {
@@ -49,7 +49,7 @@ async function main() {
     });
   }
 
-  // ====================== BAGIAN ======================
+  //BAGIAN
   console.log("📋 Menambahkan bagian...");
 
   await prisma.bagian.createMany({
@@ -57,7 +57,7 @@ async function main() {
     skipDuplicates: true
   });
 
-  // ====================== JENIS KEGIATAN ======================
+  // JENIS KEGIATAN
   console.log("📋 Menambahkan jenis kegiatan...");
 
   const jenisKegiatanList = [
@@ -79,7 +79,7 @@ async function main() {
     skipDuplicates: true
   });
 
-  // ====================== APPROVER ======================
+  // APPROVER
   console.log("📋 Menambahkan approver...");
 
   const approverList = [
@@ -110,7 +110,7 @@ async function main() {
     skipDuplicates: true
   });
 
-  // ====================== LOKASI ======================
+  //LOKASI
   console.log("📋 Menambahkan lokasi...");
 
   const lokasiList = [
@@ -130,7 +130,7 @@ async function main() {
     skipDuplicates: true
   });
 
-  // ====================== JENIS KONSUMSI ======================
+  //JENIS KONSUMSI
   console.log("📋 Menambahkan jenis konsumsi...");
 
   const jenisKonsumsi = ["PERTA","Regular","Standar","VIP","VVIP"];
@@ -140,7 +140,7 @@ async function main() {
     skipDuplicates: true
   });
 
-  // ====================== SELESAI ======================
+  // SELESAI
   console.log("\n✅ SEEDING BERHASIL (sekali saja)!");
 }
 
