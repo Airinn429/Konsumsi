@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { CommandList } from "cmdk";
 
 //tipe data
 type OrderStatus = 'Pending' | 'Approved' | 'Rejected' | 'Draft' | 'Cancelled';
@@ -114,7 +115,19 @@ interface FormData {
     keterangan: string;
     groups: ConsumptionGroup[]; // Mengganti 'items' menjadi 'groups'
 }
+// ... interface FormData selesai ...
 
+// [BARU] Helper untuk format tanggal ke string "YYYY-MM-DD" (untuk value input type="date")
+const formatDate = (date: Date | undefined) => {
+    if (!date) return '';
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+// ... const initialFormData ...
 // Data diperbarui untuk mencocokkan tanggal saat ini agar filter berfungsi
 const today = new Date();
 const tomorrow = new Date(today);
@@ -277,7 +290,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onV
                 <Command>
                     <CommandInput placeholder={searchPlaceholder} />
                     <CommandEmpty>{notFoundMessage}</CommandEmpty>
-                    <CommandGroup className="max-h-60 overflow-y-auto scrollbar-thin">
+                    <CommandList className="max-h-60 overflow-y-auto scrollbar-thin overflow-hidden">
                         {options.map((option) => (
                             <CommandItem
                                 key={option}
@@ -296,7 +309,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onV
                                 {option}
                             </CommandItem>
                         ))}
-                    </CommandGroup>
+                    </CommandList>
                 </Command>
             </PopoverContent>
         </Popover>
@@ -419,14 +432,12 @@ const OrderListItem: React.FC<{ order: Order; onViewDetails: (order: Order) => v
     );
 };
 
-// =========================================================================
 // 4. KOMPONEN RIWAYAT
-// =========================================================================
 interface OrderHistoryProps {
     history: Order[];
     onViewDetails: (order: Order) => void;
     viewMode: 'grid' | 'list';
-    totalHistoryCount: number; // [BARU] Total history tanpa filter
+    totalHistoryCount: number; // Total history tanpa filter
 }
 
 const OrderHistory: React.FC<OrderHistoryProps> = ({ history, onViewDetails, viewMode, totalHistoryCount }) => {
@@ -577,7 +588,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ history, onViewDetails, vie
                             >
                                 {totalHistoryCount === 0 ? "Belum Ada Pesanan" : "Tidak Ada Hasil"}
                             </motion.span>
-                            <p className="text-muted-foreground max-w-xs text-sm">
+                            <p className="text-muted-foreground max-w-xs text-sm overflow-y-auto scrollbar-thin">
                                 {totalHistoryCount === 0 
                                     ? "Tidak ada data pesanan yang cocok dengan filter yang Anda pilih."
                                     : "Tidak ada data pesanan yang cocok dengan filter yang Anda pilih."
@@ -629,9 +640,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ history, onViewDetails, vie
 
 
 
-// =========================================================================
 // 5. KOMPONEN FORM
-// =========================================================================
 interface OrderFormProps {
     initialData: FormData;
     onSubmit: (data: Order) => void;
@@ -641,13 +650,39 @@ interface OrderFormProps {
 }
 
 const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onCancel, isSuccessful, setIsSuccessful }) => {
-    const [formData, setFormData] = useState<FormData>(initialData);
+    // --- [MULAI BAGIAN BARU] ---
+    
+    // 1. Inisialisasi State dengan Logic H+1
+    const [formData, setFormData] = useState<FormData>(() => {
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        return {
+            ...initialData,
+            tanggalPermintaan: today,    // Default hari ini
+            tanggalPengiriman: tomorrow, // Default besok (H+1)
+        };
+    });
+
+    // 2. State bawaan lainnya (tetap dipertahankan)
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submissionTime, setSubmissionTime] = useState<Date | null>(null);
 
-    // (Tambah pengiriman button removed from UI; keep functionality easy to add later)
+    // 3. Logic Validasi Tanggal (Min Delivery Date)
+    const [minDeliveryDate, setMinDeliveryDate] = useState('');
+
+    useEffect(() => {
+        if (formData.tanggalPermintaan) {
+            const reqDate = new Date(formData.tanggalPermintaan);
+            const minDate = new Date(reqDate);
+            minDate.setDate(minDate.getDate() + 1); // Tambah 1 hari dari permintaan
+            
+            setMinDeliveryDate(formatDate(minDate));
+        }
+    }, [formData.tanggalPermintaan]);
 
     // [BARU] Menghapus grup pengiriman
     const handleRemoveGroup = (groupId: string) => {
@@ -848,7 +883,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
     // [DIPERBAIKI] JSX dibungkus dengan React.Fragment (<>) untuk mengatasi error single root element
     return (
         <>
-            <Card className="w-full max-w-3xl shadow-xl border">
+            <Card className="w-full max-w-3xl shadow-xl border overflow-y-auto scrollbar-thin">
                 <CardHeader className="p-6">
                     <CardTitle className="text-2xl font-bold text-foreground">Pemesanan Konsumsi Karyawan</CardTitle>
                     <CardDescription>
@@ -947,7 +982,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                                     <div className="flex justify-between items-center">
                                         <h4 className="text-lg font-semibold text-violet-700 dark:text-violet-400">Informasi Umum & Pemesan</h4>
                                     </div>
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 overflow-y-auto scrollbar-thin">
                                         <Label htmlFor="kegiatan">Nama Kegiatan / Event</Label>
                                         <SearchableSelect
                                             value={formData.kegiatan}
@@ -976,7 +1011,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                                         <div className="space-y-2"><Label htmlFor="untukBagian">Untuk Bagian/Unit</Label><Input id="untukBagian" value={formData.untukBagian} readOnly className="bg-violet-50 dark:bg-violet-900/50 border-violet-200" /></div>
                                         <div className="space-y-2"><Label htmlFor="noHp">No. HP Pengaju</Label><Input id="noHp" placeholder="08xxxxxxxxxx" value={formData.noHp} onChange={(e) => handleChange('noHp', e.target.value)} /></div>
                                         {/* [DIKEMBALIKAN] Field Tamu (Tipe) */}
-                                        <div className="space-y-2">
+                                        <div className="space-y-2 overflow-y-auto scrollbar-thin">
                                             <Label htmlFor="tipeTamu">Tamu (Tipe)</Label>
                                             <SearchableSelect
                                                 value={formData.tipeTamu}
@@ -991,7 +1026,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                                         </div>
                                     </div>
                                 </div>
-
+                                
                                 {/* KATEGORI 2: PENGIRIMAN & KONSUMSI [DIPERBAIKI] */}
                                 <div className="space-y-4 pt-4 border-t">
                                     <div className="flex justify-between items-center">
@@ -1019,7 +1054,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                                                         <X className="h-4 w-4" />
                                                     </Button>
                                                 )}
-                                                <div className="grid sm:grid-cols-2 gap-4">
+                                                <div className="grid sm:grid-cols-2 gap-4 overflow-y-auto scrollbar-thin">
                                                     <div className="space-y-2">
                                                         <Label htmlFor={`sesiWaktu-${group.id}`}>Sesi Waktu</Label>
                                                         <SearchableSelect
@@ -1033,7 +1068,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
 
                                                     </div>
 
-                                                    <div className="space-y-2">
+                                                    <div className="space-y-2 overflow-y-auto scrollbar-thin">
                                                         <Label htmlFor={`lokasiPengiriman-${group.id}`}>Lokasi Pengiriman</Label>
                                                         <SearchableSelect
                                                             value={group.lokasiPengiriman}
@@ -1061,7 +1096,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                                                                 exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
                                                                 className="relative"
                                                             >
-                                                                <div className="grid sm:grid-cols-3 gap-4">
+                                                                <div className="grid sm:grid-cols-3 gap-4 overflow-y-auto scrollbar-thin">
                                                                     <div className="space-y-2">
                                                                         <Label htmlFor={`jenisKonsumsi-${subItem.id}`}>Jenis Konsumsi</Label>
                                                                         {/* [DIKEMBALIKAN] Logika disabled dan filter menu diperbarui */}
@@ -1130,13 +1165,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                                         ))}
                                     </AnimatePresence>
 
-                                    {/* [DIHAPUS] Tombol "Tambah Pengiriman" dihapus sesuai permintaan */}
-                                    {/* <div className="flex justify-end mt-4">
-                                        <Button type="button" size="sm" variant="outline" onClick={handleAddGroup} className="flex items-center gap-2 border-violet-300 hover:bg-violet-100 hover:text-violet-700">
-                                            <Plus className="h-4 w-4" /> Tambah Pengiriman
-                                        </Button>
-                                    </div> */}
-
+                                   
                                     <div className="space-y-2"><Label htmlFor="keterangan">Keterangan</Label><Textarea id="keterangan" placeholder="Silahkan Isi Keterangan Anda" value={formData.keterangan} onChange={(e) => handleChange('keterangan', e.target.value)} /></div>
                                 </div>
 
@@ -1166,7 +1195,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
 
     {/* [DIPERBAIKI] Review Dialog disesuaikan dengan struktur 'groups' */}
     <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
-        <DialogContent className="sm:max-w-md p-0 bg-background border-0 gap-0">
+        <DialogContent className="sm:max-w-md p-0 bg-background border-0 gap-0 overflow-y-auto scrollbar-thin">
             <DialogHeader className="p-6 bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-900/50 dark:to-fuchsia-950/50">
                 <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
                     Review Pesanan Anda
@@ -1241,9 +1270,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
 };
 
 
-// =========================================================================
 // 6. KOMPONEN DIALOG KONFIRMASI & DETAIL
-// =========================================================================
 
 const OrderDetailsDialog: React.FC<{ 
     order: Order | null; 
@@ -1301,7 +1328,7 @@ const OrderDetailsDialog: React.FC<{
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-2xl p-0 bg-background border-0 gap-0">
+            <DialogContent className="sm:max-w-2xl p-0 bg-background border-0 gap-0 overflow-y-auto scrollbar-thin">
                 <DialogHeader className="p-6 rounded-t-lg bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-950/50 dark:to-fuchsia-950/50">
                     <div className="flex justify-between items-start">
                         <div>
@@ -1395,9 +1422,7 @@ const OrderDetailsDialog: React.FC<{
         </Dialog>
     );
 };
-// =========================================================================
 // 7. KOMPONEN FILTER STATUS BARU
-// =========================================================================
 interface StatusFilterTabsProps {
     activeFilter: OrderStatus | 'All';
     onFilterChange: (status: OrderStatus | 'All') => void;
