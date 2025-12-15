@@ -583,16 +583,30 @@ export default function ApproverDashboard() {
         }
     }, [isMounted, approverName]);
 
-    // 2. Handle Approval/Rejection Action
+    // 2. Handle Approval/Rejection Action (UPDATED WITH API CALL)
     const handleAction = async (order: Order, action: 'Approved' | 'Rejected', reason: string = '') => {
         try {
-            // Optimistic UI Update
+            // 1. Panggil API Update Status (File ini sudah Anda punya: api/orders/[id].ts)
+            const response = await fetch(`/api/orders/${order.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    status: action,
+                    cancelReason: reason // Jika rejected
+                })
+            });
+    
+            if (!response.ok) throw new Error('Gagal update status');
+    
+            // 2. Update UI (Optimistic Update)
             setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: action, alasanPenolakan: reason } : o));
             
-            console.log(`✅ Pesanan ${order.orderNumber} berhasil di-${action.toLowerCase()}`);
-
+            // Opsional: Refresh data dari server untuk memastikan
+            // fetchOrders(); 
+    
         } catch (error) {
             console.error("Error during action:", error);
+            alert("Gagal memproses persetujuan.");
         }
     };
     

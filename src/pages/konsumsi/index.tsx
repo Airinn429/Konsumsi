@@ -849,48 +849,100 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
 
     const handleReviewSubmit = (e: React.FormEvent) => { e.preventDefault(); if (isSuccessful) setIsSuccessful(false); if (validateForm()) { setIsReviewOpen(true); } };
 
-    // [DIPERBAIKI] Logika submit diubah untuk "meratakan" (flatten) data dari 'groups'
+    // [DIPERBAIKI] Logika submit disesuaikan dengan struktur 'groups' dan API call
     const handleFinalSubmit = async () => {
         setIsSubmitting(true);
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        try {
+            // 1. Ratakan (Flatten) data dari groups ke format yang diterima API
+            const itemsToSubmit: ConsumptionItemData[] = [];
+            
+            formData.groups.forEach(group => {
+                group.subItems.forEach(subItem => {
+                    // Pastikan qty dikonversi ke number
+                    const quantity = typeof subItem.qty === 'string' 
+                        ? parseInt(subItem.qty) 
+                        : subItem.qty;
 
-        // Flatten data dari groups ke items
-        const itemsToSubmit: ConsumptionItemData[] = [];
-        formData.groups.forEach(group => {
-            group.subItems.forEach(subItem => {
-                itemsToSubmit.push({
-                    lokasiPengiriman: group.lokasiPengiriman,
-                    sesiWaktu: group.sesiWaktu,
-                    waktu: group.waktu,
-                    jenisKonsumsi: subItem.jenisKonsumsi,
-                    qty: Number(subItem.qty) || 0,
-                    satuan: subItem.satuan,
+                    itemsToSubmit.push({
+                        // Ambil data Lokasi & Waktu dari Group (Induk)
+                        lokasiPengiriman: group.lokasiPengiriman,
+                        sesiWaktu: group.sesiWaktu,
+                        waktu: group.waktu || '', // Default string kosong jika undefined
+                        
+                        // Ambil data Menu dari SubItem (Anak)
+                        jenisKonsumsi: subItem.jenisKonsumsi,
+                        qty: quantity || 0,
+                        satuan: subItem.satuan,
+                    });
                 });
             });
-        });
 
-        const finalKegiatan = formData.kegiatan === 'Lainnya' ? formData.kegiatanLainnya : formData.kegiatan;
-        const newOrder: Order = {
-            id: `ORD${Math.floor(Math.random() * 90000) + 10000}`,
-            orderNumber: 'TEMP', // Temporary, will be replaced by API
-            kegiatan: finalKegiatan,
-            tanggalPermintaan: formData.tanggalPermintaan,
-            tanggalPengiriman: formData.tanggalPengiriman,
-            untukBagian: formData.untukBagian,
-            yangMengajukan: formData.yangMengajukan,
-            noHp: formData.noHp,
-            namaApprover: formData.namaApprover,
-            tipeTamu: formData.tipeTamu, // [DIKEMBALIKAN]
-            keterangan: formData.keterangan,
-            items: itemsToSubmit, // Data yang sudah di-flatten
-            status: 'Pending',
-        };
+            // 2. Tentukan nama kegiatan final
+            const finalKegiatan = formData.kegiatan === 'Lainnya' ? formData.kegiatanLainnya : formData.kegiatan;
 
-        onSubmit(newOrder);
-        setIsSubmitting(false);
-        setIsReviewOpen(false);
-        setIsSuccessful(true);
-        setSubmissionTime(new Date());
+            // 3. Siapkan Payload untuk dikirim ke API
+            const payload = {
+                kegiatan: finalKegiatan,
+                kegiatanLainnya: formData.kegiatan === 'Lainnya' ? formData.kegiatanLainnya : undefined,
+                tanggalPermintaan: formData.tanggalPermintaan, // Kirim sebagai object Date, JSON.stringify akan mengurus formatnya
+                tanggalPengiriman: formData.tanggalPengiriman,
+                untukBagian: formData.untukBagian,
+                yangMengajukan: formData.yangMengajukan,
+                noHp: formData.noHp,
+                namaApprover: formData.namaApprover,
+                tipeTamu: formData.tipeTamu,
+                keterangan: formData.keterangan,
+                createdBy: formData.yangMengajukan, // Sesuaikan dengan logika user session Anda
+                items: itemsToSubmit // Gunakan array yang sudah diratakan tadi
+            };
+
+            // 4. Kirim ke Backend
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error("API Error Response:", errorData);
+                throw new Error(errorData.error || 'Gagal mengirim pesanan');
+            }
+
+            const createdOrder = await response.json();
+
+            // 5. Update UI jika sukses
+            // Konversi string date dari API kembali ke Object Date untuk state lokal
+            const formattedOrderForState: Order = {
+                id: createdOrder.id,
+                orderNumber: createdOrder.orderNumber,
+                kegiatan: createdOrder.kegiatan,
+                tanggalPermintaan: new Date(createdOrder.tanggalPermintaan),
+                tanggalPengiriman: new Date(createdOrder.tanggalPengiriman),
+                untukBagian: createdOrder.untukBagian,
+                yangMengajukan: createdOrder.yangMengajukan,
+                noHp: createdOrder.noHp,
+                namaApprover: createdOrder.namaApprover,
+                tipeTamu: createdOrder.tipeTamu || '',
+                keterangan: createdOrder.keterangan || '',
+                status: createdOrder.status as OrderStatus,
+                items: createdOrder.items || [], // API mengembalikan items dalam bentuk flat array
+            };
+
+            onSubmit(formattedOrderForState);
+            setIsReviewOpen(false);
+            setIsSuccessful(true);
+            setSubmissionTime(new Date());
+
+        } catch (error) {
+            console.error("Error submitting order:", error);
+            alert("Terjadi kesalahan saat menyimpan pesanan. Silakan coba lagi.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     useEffect(() => { if (isSuccessful) { setFormData(initialData); setErrors({}); } }, [isSuccessful, initialData]);
@@ -1714,83 +1766,10 @@ export default function ConsumptionOrderPage() {
         return counts;
     }, [history, date]);
 
+    // Fungsi handleFormSubmit yang lama sudah diganti di dalam OrderFormContent (sebagai handleFinalSubmit)
+    // Fungsi ini hanya menerima data yang sudah jadi dan menambahkannya ke state
     const handleFormSubmit = async (newOrder: Order) => { 
-        console.log('📝 Submitting order form...');
-        
-        try {
-            // Get username dari localStorage
-            const username = typeof window !== 'undefined' ? localStorage.getItem('username') || 'nadia' : 'nadia';
-            
-            // Prepare payload untuk API
-            const payload = {
-                kegiatan: newOrder.kegiatan,
-                kegiatanLainnya: newOrder.kegiatan === 'Lainnya' ? newOrder.keterangan : undefined,
-                tanggalPermintaan: newOrder.tanggalPermintaan.toISOString(),
-                tanggalPengiriman: newOrder.tanggalPengiriman.toISOString(),
-                untukBagian: newOrder.untukBagian,
-                yangMengajukan: newOrder.yangMengajukan,
-                noHp: newOrder.noHp,
-                namaApprover: newOrder.namaApprover,
-                tipeTamu: newOrder.tipeTamu || '',
-                keterangan: newOrder.keterangan || '',
-                createdBy: username,
-                items: newOrder.items.map(item => ({
-                    jenisKonsumsi: item.jenisKonsumsi,
-                    qty: Number(item.qty) || 0,
-                    satuan: item.satuan,
-                    lokasiPengiriman: item.lokasiPengiriman,
-                    sesiWaktu: item.sesiWaktu,
-                    waktu: item.waktu,
-                })),
-            };
-            
-            console.log('📤 Payload to API:', payload);
-            
-            // POST ke API
-            const response = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            
-            console.log('📡 Response status:', response.status);
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                console.error('❌ API Error:', errorData);
-                throw new Error(errorData.error || 'Failed to create order');
-            }
-            
-            const createdOrder = await response.json();
-            console.log('✅ Order berhasil dibuat:', createdOrder.orderNumber);
-            console.log('📦 Created order data:', createdOrder);
-            
-            // Update history dengan order baru dari API
-            setHistory(prev => [{
-                id: createdOrder.id,
-                orderNumber: createdOrder.orderNumber,
-                kegiatan: createdOrder.kegiatan,
-                tanggalPermintaan: new Date(createdOrder.tanggalPermintaan),
-                tanggalPengiriman: new Date(createdOrder.tanggalPengiriman),
-                untukBagian: createdOrder.untukBagian,
-                yangMengajukan: createdOrder.yangMengajukan,
-                noHp: createdOrder.noHp,
-                namaApprover: createdOrder.namaApprover,
-                tipeTamu: createdOrder.tipeTamu || '',
-                keterangan: createdOrder.keterangan || '',
-                status: createdOrder.status as OrderStatus,
-                items: createdOrder.items || [],
-            }, ...prev]);
-            
-            console.log('✅ History updated. New length:', history.length + 1);
-            
-        } catch (error) {
-            console.error('❌ Error creating order:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            // PENTING: Ganti alert() dengan custom modal atau toast. Namun, karena ini demo, saya biarkan alert untuk keperluan debugging/simulasi.
-            alert(`Gagal membuat pesanan: ${errorMessage}\n\nSilakan cek console untuk detail.`);
-            throw error; // Re-throw untuk debugging
-        }
+        setHistory(prev => [newOrder, ...prev]);
     };
     
     // Fungsi untuk menangani pembatalan pesanan
