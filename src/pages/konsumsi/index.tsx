@@ -650,7 +650,6 @@ interface OrderFormProps {
 }
 
 const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onCancel, isSuccessful, setIsSuccessful }) => {
-    // --- [MULAI BAGIAN BARU] ---
     
     // 1. Inisialisasi State dengan Logic H+1
     const [formData, setFormData] = useState<FormData>(() => {
@@ -881,6 +880,9 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
             // 2. Tentukan nama kegiatan final
             const finalKegiatan = formData.kegiatan === 'Lainnya' ? formData.kegiatanLainnya : formData.kegiatan;
 
+            // [PERBAIKAN] Ambil username asli dari localStorage untuk relasi database
+            const actualUsername = typeof window !== 'undefined' ? localStorage.getItem('username') : null;
+
             // 3. Siapkan Payload untuk dikirim ke API
             const payload = {
                 kegiatan: finalKegiatan,
@@ -893,7 +895,8 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                 namaApprover: formData.namaApprover,
                 tipeTamu: formData.tipeTamu,
                 keterangan: formData.keterangan,
-                createdBy: formData.yangMengajukan, // Sesuaikan dengan logika user session Anda
+                // [PERBAIKAN] Gunakan username asli, jika tidak ada fallback ke yangMengajukan
+                createdBy: actualUsername || formData.yangMengajukan, 
                 items: itemsToSubmit // Gunakan array yang sudah diratakan tadi
             };
 
@@ -960,8 +963,8 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
     // [DIPERBAIKI] JSX dibungkus dengan React.Fragment (<>) untuk mengatasi error single root element
     return (
         <>
-            <Card className="w-full max-w-3xl shadow-xl border">
-                <CardHeader className="p-6">
+            <Card className="w-full max-w-3xl shadow-xl border h-full flex flex-col overflow-hidden">
+                <CardHeader className="p-6 flex-shrink-0">
                     <CardTitle className="text-2xl font-bold text-foreground">Pemesanan Konsumsi Karyawan</CardTitle>
                     <CardDescription>
                         {isSuccessful ? (<span className="text-green-600 font-medium">Pesanan Anda berhasil dikirim!</span>) : ("Silahkan Isi Pengajuan Pemesanan Konsumsi Anda.")}
@@ -1010,7 +1013,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                 </CardHeader>
 
                 {isSuccessful ? (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1 flex flex-col overflow-y-auto">
                         <CardContent className="text-center p-8 md:p-12 bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-950/50 dark:to-fuchsia-950/50 relative">
                             <motion.div
                                 initial={{ scale: 0, rotate: -180 }}
@@ -1043,14 +1046,14 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                                 </p>
                             )}
                         </CardContent>
-                        <CardFooter className="flex-col sm:flex-row justify-center gap-4 p-6 bg-slate-50 dark:bg-slate-900/50">
+                        <CardFooter className="flex-col sm:flex-row justify-center gap-4 p-6 bg-slate-50 dark:bg-slate-900/50 flex-shrink-0">
                             <Button onClick={() => setIsSuccessful(false)} className="text-white bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 transition-all duration-300 transform hover:scale-105">
                                 <Plus className="mr-2 h-4 w-4" /> Buat Pesanan Baru
                             </Button>
                         </CardFooter>
                     </motion.div>
                 ) : (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col min-h-0">
                         <form onSubmit={handleReviewSubmit} className="flex flex-col h-full">
                             <CardContent 
                                 className="grid gap-6 p-6 flex-1 overflow-y-auto scrollbar-thin"
@@ -1302,7 +1305,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                                 </div>
 
                             </CardContent>
-                            <CardFooter className="flex justify-between p-6 bg-violet-50 dark:bg-violet-950/50 rounded-b-lg">
+                            <CardFooter className="flex justify-between p-6 bg-violet-50 dark:bg-violet-950/50 rounded-b-lg flex-shrink-0">
                                 <Button type="button" variant="ghost" onClick={onCancel}>Batal</Button>
                                 <Button type="submit" className="text-white bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 transition-all duration-300 transform hover:scale-105">Buat Pesanan <ChevronDown className="h-4 w-4 ml-2 transform rotate-[-90deg]" /></Button>
                             </CardFooter>
@@ -1949,17 +1952,21 @@ export default function ConsumptionOrderPage() {
                 }
                 setIsFormVisible(isOpen);
             }}>
-                <DialogContent className="p-0 border-0 bg-transparent shadow-none data-[state=open]:bg-transparent sm:rounded-lg h-full max-w-full sm:max-w-3xl">
-                    <DialogTitle className="sr-only">Pemesanan Konsumsi Karyawan</DialogTitle>
-                    <DialogDescription className="sr-only">Buka formulir untuk membuat pengajuan konsumsi baru.</DialogDescription>
-                    <OrderFormContent
-                        initialData={initialFormData}
-                        onSubmit={handleFormSubmit}
-                        onCancel={() => { setIsFormVisible(false); setIsSuccessful(false); }}
-                        isSuccessful={isSuccessful}
-                        setIsSuccessful={setIsSuccessful}
-                    />
-                </DialogContent> 
+<DialogContent className="flex flex-col p-0 border-0 bg-transparent shadow-none data-[state=open]:bg-transparent sm:rounded-lg h-[85vh] sm:max-w-3xl w-full max-w-full">
+    <DialogTitle className="sr-only">Pemesanan Konsumsi Karyawan</DialogTitle>
+    <DialogDescription className="sr-only">Buka formulir untuk membuat pengajuan konsumsi baru.</DialogDescription>
+    
+    {/* Wrapper div untuk memastikan Card mengisi ruang yang ada */}
+    <div className="flex-1 h-full min-h-0">
+        <OrderFormContent
+            initialData={initialFormData}
+            onSubmit={handleFormSubmit}
+            onCancel={() => { setIsFormVisible(false); setIsSuccessful(false); }}
+            isSuccessful={isSuccessful}
+            setIsSuccessful={setIsSuccessful}
+        />
+    </div>
+</DialogContent>
             </Dialog> 
         </div>
     );
