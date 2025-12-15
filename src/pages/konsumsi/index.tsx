@@ -289,8 +289,9 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onV
             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                 <Command>
                     <CommandInput placeholder={searchPlaceholder} />
-                    <CommandEmpty>{notFoundMessage}</CommandEmpty>
-                    <CommandList className="max-h-60 overflow-y-auto scrollbar-thin overflow-hidden">
+                    {/* PERBAIKAN: CommandList sudah memiliki max-height dan overflow-y-auto */}
+                    <CommandList className="max-h-60 overflow-y-auto scrollbar-thin"> 
+                        <CommandEmpty>{notFoundMessage}</CommandEmpty>
                         {options.map((option) => (
                             <CommandItem
                                 key={option}
@@ -347,7 +348,6 @@ const ConfettiPiece: React.FC = () => {
     );
 };
 
-// [DIPERBAIKI] Komponen Canvas Konfeti didefinisikan di luar komponen utama
 const ConfettiCanvas = () => (
     <div style={{
         position: 'fixed',
@@ -671,18 +671,25 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submissionTime, setSubmissionTime] = useState<Date | null>(null);
 
-    // 3. Logic Validasi Tanggal (Min Delivery Date)
-    const [minDeliveryDate, setMinDeliveryDate] = useState('');
+    // 3. Logic untuk menonaktifkan tanggal yang sudah lewat (sebelum hari ini)
+    const todayAtMidnight = useMemo(() => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }, []);
 
-    useEffect(() => {
-        if (formData.tanggalPermintaan) {
-            const reqDate = new Date(formData.tanggalPermintaan);
-            const minDate = new Date(reqDate);
-            minDate.setDate(minDate.getDate() + 1); // Tambah 1 hari dari permintaan
-            
-            setMinDeliveryDate(formatDate(minDate));
-        }
-    }, [formData.tanggalPermintaan]);
+    // 4. Logic Validasi Tanggal Pengiriman (Minimum Tanggal Permintaan)
+    const minDeliveryDateObj = useMemo(() => {
+        // Logika telah direvisi untuk mengizinkan hari yang sama,
+        // yang secara efektif menonaktifkan hari yang sudah lewat
+        const minDate = new Date(formData.tanggalPermintaan);
+        minDate.setHours(0, 0, 0, 0); 
+        
+        // Kita bandingkan dengan hari ini
+        const latestMinDate = (minDate.getTime() > todayAtMidnight.getTime() ? minDate : todayAtMidnight);
+
+        return latestMinDate;
+    }, [formData.tanggalPermintaan, todayAtMidnight]);
 
     // [BARU] Menghapus grup pengiriman
     const handleRemoveGroup = (groupId: string) => {
@@ -798,7 +805,25 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
         if (errors[name]) { setErrors(prev => { const newErrors = { ...prev }; delete newErrors[name]; return newErrors; }); }
     };
 
-    const handleDateChange = (name: keyof FormData, date: Date | undefined) => { if (date) { setFormData(prev => ({ ...prev, [name]: date })); } };
+    const handleDateChange = (name: keyof FormData, date: Date | undefined) => { 
+        if (date) { 
+            setFormData(prev => ({ ...prev, [name]: date })); 
+        } 
+        
+        // Perbaiki Tanggal Pengiriman jika Tanggal Permintaan diubah
+        if (name === 'tanggalPermintaan' && date) {
+            const minDeliveryDate = new Date(date);
+            minDeliveryDate.setHours(0, 0, 0, 0);
+            
+            const currentDeliveryDate = new Date(formData.tanggalPengiriman);
+            currentDeliveryDate.setHours(0, 0, 0, 0);
+
+            // Jika tanggal pengiriman yang sudah dipilih kurang dari tanggal permintaan, set ke tanggal permintaan
+            if (currentDeliveryDate.getTime() < minDeliveryDate.getTime()) {
+                setFormData(prev => ({ ...prev, tanggalPengiriman: minDeliveryDate }));
+            }
+        }
+    };
 
     // [DIPERBAIKI] Validasi disesuaikan dengan struktur 'groups'
     const validateForm = (): boolean => {
@@ -883,7 +908,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
     // [DIPERBAIKI] JSX dibungkus dengan React.Fragment (<>) untuk mengatasi error single root element
     return (
         <>
-            <Card className="w-full max-w-3xl shadow-xl border overflow-y-auto scrollbar-thin">
+            <Card className="w-full max-w-3xl shadow-xl border">
                 <CardHeader className="p-6">
                     <CardTitle className="text-2xl font-bold text-foreground">Pemesanan Konsumsi Karyawan</CardTitle>
                     <CardDescription>
@@ -897,7 +922,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                             <div className="bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-950/50 dark:to-violet-900/50 p-4 rounded-lg border border-violet-200 dark:border-violet-800">
                                 <div className="flex items-start gap-3">
                                     <div className="p-2 bg-white dark:bg-violet-900 rounded-lg">
-                                        <svg className="w-6 h-6 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-6 h-6 text-violet-600 dark:text-violet-400" fill="currentColor" viewBox="0 0 24 24">
                                             <circle cx="12" cy="12" r="10" strokeWidth="2"/>
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6l4 2"/>
                                         </svg>
@@ -916,7 +941,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                             <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/50 dark:to-amber-900/50 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
                                 <div className="flex items-start gap-3">
                                     <div className="p-2 bg-white dark:bg-amber-900 rounded-lg">
-                                        <svg className="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-6 h-6 text-amber-600 dark:text-amber-400" fill="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                         </svg>
                                     </div>
@@ -974,8 +999,10 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                     </motion.div>
                 ) : (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <form onSubmit={handleReviewSubmit}>
-                            <CardContent className="grid gap-6 p-6 max-h-[55vh] overflow-y-auto scrollbar-thin">
+                        <form onSubmit={handleReviewSubmit} className="flex flex-col h-full">
+                            <CardContent 
+                                className="grid gap-6 p-6 flex-1 overflow-y-auto scrollbar-thin"
+                            >
 
                                 {/* KATEGORI 1: INFORMASI UMUM */}
                                 <div className="space-y-4 pt-4 border-t">
@@ -1005,8 +1032,46 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                                         )}
                                     </AnimatePresence>
                                     <div className="grid sm:grid-cols-2 gap-4">
-                                        <div className="space-y-2"><Label htmlFor="tanggalPermintaan">Tanggal Permintaan</Label><Popover><PopoverTrigger asChild><Button variant={'outline'} className={cn('w-full justify-start text-left font-normal', !formData.tanggalPermintaan && 'text-muted-foreground')}><CalendarIcon className="mr-2 h-4 w-4" />{formData.tanggalPermintaan ? formData.tanggalPermintaan.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) : <span>Pilih tanggal</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={formData.tanggalPermintaan} onSelect={(date) => handleDateChange('tanggalPermintaan', date)} initialFocus /></PopoverContent></Popover></div>
-                                        <div className="space-y-2"><Label htmlFor="tanggalPengiriman">Tanggal Pengiriman</Label><Popover><PopoverTrigger asChild><Button variant={'outline'} className={cn('w-full justify-start text-left font-normal', !formData.tanggalPengiriman && 'text-muted-foreground')}><CalendarIcon className="mr-2 h-4 w-4" />{formData.tanggalPengiriman ? formData.tanggalPengiriman.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) : <span>Pilih tanggal</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={formData.tanggalPengiriman} onSelect={(date) => handleDateChange('tanggalPengiriman', date)} initialFocus /></PopoverContent></Popover></div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="tanggalPermintaan">Tanggal Permintaan</Label>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant={'outline'} className={cn('w-full justify-start text-left font-normal', !formData.tanggalPermintaan && 'text-muted-foreground')}>
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {formData.tanggalPermintaan ? formData.tanggalPermintaan.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) : <span>Pilih tanggal</span>}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0">
+                                                    <Calendar 
+                                                        mode="single" 
+                                                        selected={formData.tanggalPermintaan} 
+                                                        onSelect={(date) => handleDateChange('tanggalPermintaan', date)} 
+                                                        initialFocus 
+                                                        disabled={{ before: todayAtMidnight }}
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="tanggalPengiriman">Tanggal Pengiriman</Label>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant={'outline'} className={cn('w-full justify-start text-left font-normal', !formData.tanggalPengiriman && 'text-muted-foreground')}>
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {formData.tanggalPengiriman ? formData.tanggalPengiriman.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) : <span>Pilih tanggal</span>}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0">
+                                                    <Calendar 
+                                                        mode="single" 
+                                                        selected={formData.tanggalPengiriman} 
+                                                        onSelect={(date) => handleDateChange('tanggalPengiriman', date)} 
+                                                        initialFocus 
+                                                        disabled={{ before: minDeliveryDateObj }}
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
                                         <div className="space-y-2"><Label htmlFor="yangMengajukan">Yang Mengajukan</Label><Input id="yangMengajukan" value={formData.yangMengajukan} readOnly className="bg-violet-50 dark:bg-violet-900/50 border-violet-200" /></div>
                                         <div className="space-y-2"><Label htmlFor="untukBagian">Untuk Bagian/Unit</Label><Input id="untukBagian" value={formData.untukBagian} readOnly className="bg-violet-50 dark:bg-violet-900/50 border-violet-200" /></div>
                                         <div className="space-y-2"><Label htmlFor="noHp">No. HP Pengaju</Label><Input id="noHp" placeholder="08xxxxxxxxxx" value={formData.noHp} onChange={(e) => handleChange('noHp', e.target.value)} /></div>
@@ -1136,7 +1201,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                                                                                 type="button"
                                                                                 variant="ghost"
                                                                                 size="icon"
-                                                                                className="h-9 w-9 text-red-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50"
+                                                                                className="absolute top-1 right-1 h-7 w-7 text-red-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50"
                                                                                 onClick={() => handleRemoveSubItem(group.id, subItem.id)}
                                                                             >
                                                                                 <Trash2 className="h-4 w-4" />
@@ -1440,7 +1505,7 @@ const StatusFilterTabs: React.FC<StatusFilterTabsProps> = ({ activeFilter, onFil
     ];
 
     return (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex overflow-x-auto pb-2 gap-2 scrollbar-thin"> {/* PERBAIKAN: Gunakan overflow-x-auto untuk horizontal scroll */}
             {filters.map(filter => {
                 const Icon = filter.icon;
                 return (
@@ -1449,7 +1514,7 @@ const StatusFilterTabs: React.FC<StatusFilterTabsProps> = ({ activeFilter, onFil
                         variant={activeFilter === filter.value ? "default" : "outline"}
                         size="sm"
                         className={cn(
-                            "flex items-center gap-2 transition-all duration-300",
+                            "flex items-center gap-2 transition-all duration-300 flex-shrink-0",
                             activeFilter === filter.value 
                                 ? "text-white bg-gradient-to-r from-violet-500 to-fuchsia-500" 
                                 : "bg-background text-foreground"
@@ -1569,11 +1634,7 @@ export default function ConsumptionOrderPage() {
         }
         
         loadOrders(); // Load langsung tanpa check isMounted
-    }, []); // Empty dependency array - hanya run sekali saat mount
-    // NOTE: Sebelumnya terdapat logic yang membersihkan data berdasarkan ID yang dimulai dengan "ORD".
-    // Itu menyebabkan pesanan yang dibuat oleh user (juga menggunakan prefix "ORD") ikut terhapus saat mount.
-    // Untuk menjaga persistensi riwayat user, blok pembersihan ini dihapus. Jika diperlukan pembersihan mock
-    // di masa depan, gunakan flag khusus atau pola ID yang berbeda (mis. "MOCK_...") untuk membedakan.
+    }, []); // Empty dependency array - hanya run once on mount
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -1726,6 +1787,7 @@ export default function ConsumptionOrderPage() {
         } catch (error) {
             console.error('❌ Error creating order:', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            // PENTING: Ganti alert() dengan custom modal atau toast. Namun, karena ini demo, saya biarkan alert untuk keperluan debugging/simulasi.
             alert(`Gagal membuat pesanan: ${errorMessage}\n\nSilakan cek console untuk detail.`);
             throw error; // Re-throw untuk debugging
         }
@@ -1908,7 +1970,7 @@ export default function ConsumptionOrderPage() {
                 }
                 setIsFormVisible(isOpen);
             }}>
-                <DialogContent className="p-0 border-0 max-w-3xl bg-transparent shadow-none data-[state=open]:bg-transparent sm:rounded-lg">
+                <DialogContent className="p-0 border-0 bg-transparent shadow-none data-[state=open]:bg-transparent sm:rounded-lg h-full max-w-full sm:max-w-3xl">
                     <DialogTitle className="sr-only">Pemesanan Konsumsi Karyawan</DialogTitle>
                     <DialogDescription className="sr-only">Buka formulir untuk membuat pengajuan konsumsi baru.</DialogDescription>
                     <OrderFormContent
@@ -1918,8 +1980,8 @@ export default function ConsumptionOrderPage() {
                         isSuccessful={isSuccessful}
                         setIsSuccessful={setIsSuccessful}
                     />
-                </DialogContent>
-            </Dialog>
+                </DialogContent> 
+            </Dialog> 
         </div>
     );
 }
