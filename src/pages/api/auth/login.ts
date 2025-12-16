@@ -22,12 +22,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const user = await prisma.user.findUnique({
       where: { username },
       select: {
+        role: true,
+        password: true,
         id: true,
         username: true,
         name: true,
         email: true,
-        role: true,
-        password: true, // ← INI YANG BENAR
       },
     });
 

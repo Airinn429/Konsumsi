@@ -1734,7 +1734,7 @@ const [date, setDate] = React.useState<DateRange | undefined>({
         // Filter berdasarkan tanggal
         if (date?.from) {
              orders = orders.filter(order => {
-                const orderDate = new Date(order.tanggalPengiriman);
+                const orderDate = new Date(order.tanggalPermintaan);
                 orderDate.setHours(0, 0, 0, 0); 
                 const fromDate = new Date(date.from!);
                 fromDate.setHours(0, 0, 0, 0); 

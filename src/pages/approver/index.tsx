@@ -4,14 +4,14 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter
+    Card, CardContent, CardHeader, CardTitle, CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-    CheckCircle, XCircle, Clock, Package, User, Building, Phone, FileText, Loader2, List, Search, Activity, AlertTriangle, AlertCircle, MapPin, CalendarDays, Utensils
+    CheckCircle, XCircle, Clock, Package, User, Building, FileText, Loader2, List, Search, Activity, AlertTriangle, AlertCircle, MapPin, CalendarDays, Utensils
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -185,7 +185,7 @@ const ApproverCard: React.FC<{
                     
                     {order.status === 'Pending' && (
                         <div className="flex gap-2">
-                            <RejectDialog order={order} onReject={(reason) => onAction({ ...order, alasanPenolakan: reason }, 'Rejected')} />
+                            <RejectDialog order={order} onReject={(reason) => onAction(order, 'Rejected')} />
                             <Button 
                                 size="sm" 
                                 className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
@@ -202,7 +202,7 @@ const ApproverCard: React.FC<{
     );
 };
 
-// 2. Modal Tolak (RejectDialog) - DIPERBAIKI
+// 2. Modal Tolak (RejectDialog)
 const RejectDialog: React.FC<{ order: Order; onReject: (reason: string) => void; }> = ({ order, onReject }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [reason, setReason] = useState('');
@@ -211,12 +211,13 @@ const RejectDialog: React.FC<{ order: Order; onReject: (reason: string) => void;
     const handleRejectSubmit = () => {
         if (!reason.trim()) return;
         setIsSubmitting(true);
+        // Simulasi delay sedikit untuk UX
         setTimeout(() => {
              onReject(reason);
              setIsSubmitting(false);
              setIsOpen(false);
              setReason('');
-        }, 500);
+        }, 300);
     };
 
     return (
@@ -226,8 +227,7 @@ const RejectDialog: React.FC<{ order: Order; onReject: (reason: string) => void;
                     Tolak
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] border-l-4 border-l-red-500">
-                <DialogHeader className="space-y-3">
+<DialogContent className="sm:max-w-[500px] border-l-4 border-l-red-500 bg-white dark:bg-slate-900">                <DialogHeader className="space-y-3">
                     <div className="flex items-center gap-3 text-red-600">
                          <div className="p-2 bg-red-100 rounded-full">
                             <AlertTriangle className="w-6 h-6" />
@@ -272,7 +272,7 @@ const RejectDialog: React.FC<{ order: Order; onReject: (reason: string) => void;
     );
 };
 
-// 3. Modal Detail Pesanan (OrderDetailViewer) - DIPERBAIKI
+// 3. Modal Detail Pesanan (OrderDetailViewer)
 const OrderDetailViewer: React.FC<{ order: Order | null; isOpen: boolean; onClose: () => void; }> = ({ order, isOpen, onClose }) => {
     if (!order) return null;
     const statusDisplay = getStatusDisplay(order.status);
@@ -479,7 +479,6 @@ const StatusFilterTabs: React.FC<StatusFilterTabsProps> = ({ activeFilter, onFil
 // 4. KOMPONEN UTAMA DASHBOARD APPROVER
 // =========================================================================
 export default function ApproverDashboard() {
-    const router = useRouter();
     // Gunakan nama approver dari localStorage untuk filter API
     const [approverName, setApproverName] = useState<string | null>(null);
     const [isMounted, setIsMounted] = useState(false);
@@ -493,7 +492,7 @@ export default function ApproverDashboard() {
     useEffect(() => {
         setIsMounted(true);
         if (typeof window !== 'undefined') {
-            const name = localStorage.getItem('name');
+            const name = localStorage.getItem('username'); // Ambil username (login ID)
             setApproverName(name || 'Approver');
         }
     }, []);
@@ -503,66 +502,17 @@ export default function ApproverDashboard() {
         if (!approverName || approverName === 'Approver') return; 
         setIsLoading(true);
         try {
-            // Menggunakan endpoint /api/orders/approval.ts
-            // Note: Pastikan endpoint ini sudah dibuat di backend
-            const response = await fetch(`/api/orders/approval?approverName=${encodeURIComponent(approverName)}`);
+            // PANGGIL API GET dengan parameter role=approver
+            const response = await fetch(`/api/orders?username=${encodeURIComponent(approverName)}&role=approver`);
             
-            // Fallback jika API belum ready / error, gunakan data dummy untuk demo UI
             if (!response.ok) {
-                 console.warn("API Error, using dummy data for UI preview");
-                 // Dummy Data untuk visualisasi dengan skenario DUPLIKASI
-                 const dummyOrders: Order[] = [
-                     // Skenario 1: Duplikat Acara (Merah) - Nadia & Fauzi di Teknologi Informasi
-                     // Pesanan 1 (Nadia)
-                     {
-                         id: "ORD-001", orderNumber: "KSM-001", kegiatan: "Rapat Anggaran Q4", 
-                         tanggalPengiriman: new Date(), status: 'Pending', tanggalPermintaan: new Date(),
-                         untukBagian: "Teknologi Informasi", yangMengajukan: "Nadia Addnan", noHp: "08123456789",
-                         namaApprover: approverName, tipeTamu: "Internal", keterangan: "Mohon disediakan tepat waktu",
-                         items: [{ jenisKonsumsi: "Snack Box", qty: 20, satuan: "Box", lokasiPengiriman: "R. Rapat 1", sesiWaktu: "Pagi", waktu: "09:00" }]
-                     },
-                     // Pesanan 2 (Fauzi) - DUPLIKAT (Sama Kegiatan, Sama Dept)
-                     {
-                         id: "ORD-002", orderNumber: "KSM-002", kegiatan: "Rapat Anggaran Q4", 
-                         tanggalPengiriman: new Date(), status: 'Pending', tanggalPermintaan: new Date(),
-                         untukBagian: "Teknologi Informasi", yangMengajukan: "Fauzi", noHp: "08987654321",
-                         namaApprover: approverName, tipeTamu: "Internal", keterangan: "Tambahan peserta",
-                         items: [{ jenisKonsumsi: "Nasi Box", qty: 10, satuan: "Box", lokasiPengiriman: "R. Rapat 1", sesiWaktu: "Siang", waktu: "12:00" }]
-                     },
-
-                     // Skenario 2: Departemen Sama, Beda Acara (Kuning) - Simulasi Departemen Keuangan
-                     // Pesanan 3 (Nadia - di Keuangan)
-                     {
-                        id: "ORD-003", orderNumber: "KSM-003", kegiatan: "Audit Eksternal", 
-                        tanggalPengiriman: new Date(Date.now() + 86400000), status: 'Pending', tanggalPermintaan: new Date(),
-                        untukBagian: "Keuangan", yangMengajukan: "Nadia Addnan", noHp: "08123456789",
-                        namaApprover: approverName, tipeTamu: "VIP", keterangan: "",
-                        items: [{ jenisKonsumsi: "Prasmanan", qty: 15, satuan: "Pax", lokasiPengiriman: "Aula", sesiWaktu: "Siang", waktu: "12:00" }]
-                    },
-                    // Pesanan 4 (Fauzi - di Keuangan) - BEDA ACARA
-                    {
-                        id: "ORD-004", orderNumber: "KSM-004", kegiatan: "Meeting Vendor", 
-                        tanggalPengiriman: new Date(Date.now() + 86400000), status: 'Pending', tanggalPermintaan: new Date(),
-                        untukBagian: "Keuangan", yangMengajukan: "Fauzi", noHp: "08987654321",
-                        namaApprover: approverName, tipeTamu: "External", keterangan: "",
-                        items: [{ jenisKonsumsi: "Coffee Break", qty: 5, satuan: "Pax", lokasiPengiriman: "R. Meeting Kecil", sesiWaktu: "Sore", waktu: "15:00" }]
-                    },
-                    
-                    // Skenario 3: Normal - Tidak ada duplikasi
-                    {
-                        id: "ORD-005", orderNumber: "KSM-005", kegiatan: "Maintenance Server", 
-                        tanggalPengiriman: new Date(Date.now() + 86400000 * 2), status: 'Pending', tanggalPermintaan: new Date(),
-                        untukBagian: "Infrastruktur", yangMengajukan: "Fauzi", noHp: "08123456789",
-                        namaApprover: approverName, tipeTamu: "Internal", keterangan: "",
-                        items: [{ jenisKonsumsi: "Nasi Box", qty: 5, satuan: "Box", lokasiPengiriman: "Server Room", sesiWaktu: "Malam", waktu: "20:00" }]
-                    }
-                 ];
-                 setOrders(dummyOrders);
+                 console.error("Gagal mengambil data dari API");
                  return;
             }
 
             const data = await response.json();
             
+            // Format ulang string tanggal dari JSON menjadi object Date
             const formattedOrders: Order[] = data.map((order: any) => ({
                 ...order,
                 tanggalPengiriman: new Date(order.tanggalPengiriman),
@@ -583,30 +533,34 @@ export default function ApproverDashboard() {
         }
     }, [isMounted, approverName]);
 
-    // 2. Handle Approval/Rejection Action (UPDATED WITH API CALL)
+    // 2. Handle Approval/Rejection Action
     const handleAction = async (order: Order, action: 'Approved' | 'Rejected', reason: string = '') => {
         try {
-            // 1. Panggil API Update Status (File ini sudah Anda punya: api/orders/[id].ts)
+            // PANGGIL API PATCH untuk update status
+            // Menggunakan endpoint dinamis /api/orders/[id]
             const response = await fetch(`/api/orders/${order.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     status: action,
-                    cancelReason: reason // Jika rejected
+                    // Jika ditolak, kirim alasan. Jika disetujui, null
+                    // Sesuaikan dengan kebutuhan backend Anda jika backend menerima field 'alasanPenolakan'
+                    // Di backend sebelumnya kita tidak menangkap alasan, tapi bisa ditambahkan jika perlu.
+                    // Untuk saat ini kita kirim status saja yang utama.
                 })
             });
     
             if (!response.ok) throw new Error('Gagal update status');
     
-            // 2. Update UI (Optimistic Update)
+            // Update UI (Optimistic Update) agar cepat
             setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: action, alasanPenolakan: reason } : o));
             
-            // Opsional: Refresh data dari server untuk memastikan
+            // Opsional: Refresh data dari server untuk memastikan konsistensi
             // fetchOrders(); 
     
         } catch (error) {
             console.error("Error during action:", error);
-            alert("Gagal memproses persetujuan.");
+            alert("Gagal memproses persetujuan. Silakan coba lagi.");
         }
     };
     

@@ -1,4 +1,3 @@
-// src/pages/api/orders/[id].ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
 
@@ -6,71 +5,50 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  // 1. Ambil ID dari URL (nama file [id].ts akan mengisi req.query.id)
   const { id } = req.query;
 
   if (!id || typeof id !== 'string') {
-    return res.status(400).json({ error: 'Invalid order ID' });
+    return res.status(400).json({ error: 'Order ID is required' });
   }
 
-  // ID is a string (CUID), no need to parse to integer
-  const orderId = id;
-
-  if (req.method === 'GET') {
-    try {
-      const order = await prisma.order.findUnique({
-        where: { id: orderId },
-        include: {
-          items: true,
-          user: true,
-        },
-      });
-
-      if (!order) {
-        return res.status(404).json({ error: 'Order not found' });
-      }
-
-      return res.status(200).json(order);
-    } catch (error) {
-      console.error('Error fetching order:', error);
-      return res.status(500).json({ error: 'Failed to fetch order' });
-    }
-  }
-
+  // 2. Handle request PATCH (Update Status)
   if (req.method === 'PATCH') {
     try {
       const { status, cancelReason } = req.body;
 
-      const updateData: {
-        status?: string;
-        tanggalPembatalan?: Date;
-        alasanPembatalan?: string;
-      } = {};
+      console.log(`🔄 Request Update Order ID: ${id}`);
+      console.log(`➡️ New Status: ${status}`);
 
-      if (status) {
-        updateData.status = status;
-        if (status === 'Cancelled' || status === 'cancelled') {
-          updateData.tanggalPembatalan = new Date();
-          if (cancelReason) {
-            updateData.alasanPembatalan = cancelReason;
-          }
-        }
+      // Validasi status
+      const validStatuses = ['Approved', 'Rejected', 'Cancelled', 'Pending'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ error: `Invalid status. Allowed: ${validStatuses.join(', ')}` });
       }
 
-      const order = await prisma.order.update({
-        where: { id: orderId },
-        data: updateData,
-        include: {
-          items: true,
-          user: true,
+      // Lakukan Update ke Database
+      const updatedOrder = await prisma.order.update({
+        where: { id: id },
+        data: {
+          status: status,
+          // Update alasan jika ada (pastikan kolom 'alasanPenolakan' ada di schema.prisma Anda)
+          // Jika di schema namanya beda, sesuaikan di sini (misal: keterangan)
         },
       });
 
-      return res.status(200).json(order);
+      console.log("✅ Update Success");
+      return res.status(200).json(updatedOrder);
+
     } catch (error) {
-      console.error('Error updating order:', error);
-      return res.status(500).json({ error: 'Failed to update order' });
+      console.error('❌ Error updating order:', error);
+      return res.status(500).json({ 
+        error: 'Failed to update order', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
     }
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+  // Jika method bukan PATCH
+  res.setHeader('Allow', ['PATCH']);
+  return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
 }

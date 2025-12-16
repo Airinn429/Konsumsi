@@ -65,6 +65,8 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const [showConfetti, setShowConfetti] = useState(false);
 
+  // Ganti seluruh fungsi handleSubmit dengan ini:
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
@@ -92,15 +94,24 @@ export default function LoginPage() {
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('username', data.user.username);
                 localStorage.setItem('name', data.user.name);
-                localStorage.setItem('role', data.user.role);
+                localStorage.setItem('role', data.user.role); // Role tersimpan di sini
                 
                 // Tampilkan konfeti
                 setShowConfetti(true);
                 
-                // Redirect ke halaman HOME setelah 2 detik
+                // Redirect PINTAR berdasarkan Role
                 setTimeout(() => {
-                    router.push('/');
+                    console.log("Login Role:", data.user.role); // Cek console browser Anda
+
+                    // Jika role adalah approver, arahkan ke dashboard khusus
+                    if (data.user.role === 'approver') {
+                        router.push('/konsumsi/approver'); // Sesuaikan path folder Anda
+                    } else {
+                        // Jika user biasa, arahkan ke halaman utama/form
+                        router.push('/konsumsi'); // Sesuaikan path folder Anda
+                    }
                 }, 2000);
+
             } else {
                 setError(data.error || 'Username atau password salah');
                 setIsLoading(false);
@@ -111,7 +122,6 @@ export default function LoginPage() {
             setIsLoading(false);
         }
     };
-
     return (
         <>
             <Head>
@@ -295,7 +305,6 @@ export default function LoginPage() {
                             }}
                             className="text-xs text-red-500 hover:text-red-600 underline"
                         >
-                            Clear Session & Reload (Debug)
                         </button>
                     </motion.div>
                 </motion.div>
