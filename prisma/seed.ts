@@ -39,6 +39,13 @@ async function main() {
       password: await hashPassword("12231149"),
       role: "user",
     },
+    {
+      username: "Addnan",
+      name: "Addnan",
+      email: "addnan@demplon.com",
+      password: await hashPassword("098765"),
+      role: "Approver",
+    }
   ];
 
   for (const u of users) {

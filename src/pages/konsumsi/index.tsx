@@ -51,6 +51,23 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { CommandList } from "cmdk";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator"
+
 
 //tipe data
 type OrderStatus = 'Pending' | 'Approved' | 'Rejected' | 'Draft' | 'Cancelled';
@@ -289,32 +306,37 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onV
             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                 <Command>
                     <CommandInput placeholder={searchPlaceholder} />
-                    {/* PERBAIKAN: CommandList sudah memiliki max-height dan overflow-y-auto */}
-                    <CommandList className="max-h-60 overflow-y-auto scrollbar-thin"> 
-                        <CommandEmpty>{notFoundMessage}</CommandEmpty>
-                        {options.map((option) => (
-                            <CommandItem
-                                key={option}
-                                value={option}
-                                onSelect={(currentValue : string) => {
-                                    onValueChange(currentValue === value ? "" : currentValue);
-                                    setOpen(false);
-                                }}
-                            >
-                                <Check
-                                    className={cn(
-                                        "mr-2 h-4 w-4",
-                                        value.toLowerCase() === option.toLowerCase() ? "opacity-100" : "opacity-0"
-                                    )}
-                                />
-                                {option}
-                            </CommandItem>
-                        ))}
+                    
+                    {/* Hapus class overflow bawaan di CommandList */}
+                    <CommandList>
+                        {/* Gunakan ScrollArea Shadcn dengan ketinggian tetap (h-60 = 240px) */}
+                        <ScrollArea className="h-60 w-full">
+                            <CommandEmpty className="py-6 text-center text-sm">{notFoundMessage}</CommandEmpty>
+                            <div className="p-1">
+                                {options.map((option) => (
+                                    <CommandItem
+                                        key={option}
+                                        value={option}
+                                        onSelect={(currentValue : string) => {
+                                            onValueChange(currentValue === value ? "" : currentValue);
+                                            setOpen(false);
+                                        }}
+                                    >
+                                        <Check
+                                            className={cn(
+                                                "mr-2 h-4 w-4",
+                                                value.toLowerCase() === option.toLowerCase() ? "opacity-100" : "opacity-0"
+                                            )}
+                                        />
+                                        {option}
+                                    </CommandItem>
+                                ))}
+                            </div>
+                        </ScrollArea>
                     </CommandList>
                 </Command>
             </PopoverContent>
         </Popover>
-    
     );
 };
 
@@ -384,6 +406,7 @@ const OrderCard: React.FC<{ order: Order; onViewDetails: (order: Order) => void;
             </CardHeader>
             <CardContent className="p-4 pt-4 space-y-3 text-sm flex-grow">
                 <span className="font-semibold text-base leading-tight text-foreground">{order.kegiatan}</span>
+                
                 <div className="flex items-start space-x-3 text-muted-foreground border-t pt-3">
                     <Package className="h-4 w-4 text-violet-500 mt-1 flex-shrink-0" />
                     <div className="flex flex-col">
@@ -1609,8 +1632,10 @@ export default function ConsumptionOrderPage() {
     const [orderDetails, setOrderDetails] = useState<Order | null>(null);
 
     // State untuk Kalender dan Filter
-    const [date, setDate] = React.useState<DateRange | undefined>(undefined); // Tampilkan semua order by default
-    const [activeStatusFilter, setActiveStatusFilter] = useState<OrderStatus | 'All'>('All');
+const [date, setDate] = React.useState<DateRange | undefined>({
+    from: new Date(),
+    to: undefined, // Diset undefined agar defaultnya memilih 1 hari (hari ini)
+});    const [activeStatusFilter, setActiveStatusFilter] = useState<OrderStatus | 'All'>('All');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [currentPage, setCurrentPage] = useState(1);
     const perPage = 6;
