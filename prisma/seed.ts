@@ -25,22 +25,19 @@ async function main() {
       email: "fauzi@demplon.com",
       password: await hashPassword("654321"),
       role: "user",
-      bagianId: "Pelayanan Umum",
     },
     {
       username: "dika",
       name: "Dika",
       email: "dika@demplon.com",
       password: await hashPassword("112233"),
-      role: "Manajemen & Pengembangan",
-    },
+      role: "user",},
      {
       username: "Riza Ilhamsyah",
       name: "Riza Ilhamsyah",
       email: "riza@demplon.com",
-      password: await hashPassword("12231149"),
+      password: await hashPassword("0011223"),
       role: "user",
-      bagianId: "Teknologi Informasi",
     },
     {
       username: "Addnan",
@@ -48,7 +45,6 @@ async function main() {
       email: "addnan@demplon.com",
       password: await hashPassword("098765"),
       role: "Approver",
-      bagianId: "Pelayanan Umum",
     },
      {
       username: "Jojok Satriadi",
@@ -56,7 +52,6 @@ async function main() {
       email: "jojok@demplon.com",
       password: await hashPassword("12345"),
       role: "Approver",
-      bagianId: "Teknologi Informasi",
     },
      {
       username: "Indra",
@@ -64,7 +59,6 @@ async function main() {
       email: "indra@demplon.com",
       password: await hashPassword("009988"),
       role: "Approver",
-      bagianId: "Manajemen & Pengembangan",
     },
   ];
 
@@ -80,7 +74,7 @@ async function main() {
   console.log("📋 Menambahkan bagian...");
 
   await prisma.bagian.createMany({
-    data: [{ id: randomUUID(), nama: "Teknologi Informasi" }],
+    data: [{ id: randomUUID(), nama: "Teknologi Informasi" }, { id: randomUUID(), nama: "Manajemen & Pengembangan" }, { id: randomUUID(), nama: "Pelayanan Umum" }],
     skipDuplicates: true
   });
 
