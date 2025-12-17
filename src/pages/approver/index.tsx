@@ -294,7 +294,7 @@ const OrderDetailViewer: React.FC<{ order: Order | null; isOpen: boolean; onClos
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-3xl p-0 bg-slate-50/50 dark:bg-slate-950 overflow-hidden">
+            <DialogContent className="sm:max-w-3xl p-0 bg-slate-50/50 bg-white dark:bg-slate-950 dark:bg-slate-950 overflow-hidden">
                 {/* Header */}
                 <div className="p-6 bg-white dark:bg-slate-900 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>

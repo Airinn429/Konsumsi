@@ -305,34 +305,36 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onV
             </PopoverTrigger>
             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                 <Command>
-                    <CommandInput placeholder={searchPlaceholder} />
+                    <CommandInput 
+                        placeholder={searchPlaceholder} 
+                        autoComplete="off"
+                        spellCheck={false}
+                        data-form-type="other"
+                        data-lpignore="true" 
+                        data-1p-ignore="true"
+                    />
                     
-                    {/* Hapus class overflow bawaan di CommandList */}
-                    <CommandList>
-                        {/* Gunakan ScrollArea Shadcn dengan ketinggian tetap (h-60 = 240px) */}
-                        <ScrollArea className="h-60 w-full">
-                            <CommandEmpty className="py-6 text-center text-sm">{notFoundMessage}</CommandEmpty>
-                            <div className="p-1">
-                                {options.map((option) => (
-                                    <CommandItem
-                                        key={option}
-                                        value={option}
-                                        onSelect={(currentValue : string) => {
-                                            onValueChange(currentValue === value ? "" : currentValue);
-                                            setOpen(false);
-                                        }}
-                                    >
-                                        <Check
-                                            className={cn(
-                                                "mr-2 h-4 w-4",
-                                                value.toLowerCase() === option.toLowerCase() ? "opacity-100" : "opacity-0"
-                                            )}
-                                        />
-                                        {option}
-                                    </CommandItem>
-                                ))}
-                            </div>
-                        </ScrollArea>
+                    <CommandList className="max-h-[240px] overflow-y-auto overflow-x-hidden p-1">
+                        <CommandEmpty className="py-6 text-center text-sm">{notFoundMessage}</CommandEmpty>
+                        
+                        {options.map((option) => (
+                            <CommandItem
+                                key={option}
+                                value={option}
+                                onSelect={(currentValue : string) => {
+                                    onValueChange(currentValue === value ? "" : currentValue);
+                                    setOpen(false);
+                                }}
+                            >
+                                <Check
+                                    className={cn(
+                                        "mr-2 h-4 w-4",
+                                        value.toLowerCase() === option.toLowerCase() ? "opacity-100" : "opacity-0"
+                                    )}
+                                />
+                                {option}
+                            </CommandItem>
+                        ))}
                     </CommandList>
                 </Command>
             </PopoverContent>
