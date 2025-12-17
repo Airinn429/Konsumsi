@@ -65,63 +65,65 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const [showConfetti, setShowConfetti] = useState(false);
 
-  // Ganti seluruh fungsi handleSubmit dengan ini:
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError("");
+    // Di dalam src/pages/login.tsx
 
-        // Validasi input
-        if (!username || !password) {
-            setError("Username dan password harus diisi");
-            return;
-        }
+const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
 
-        setIsLoading(true);
+    if (!username || !password) {
+        setError("Username dan password harus diisi");
+        return;
+    }
 
-        try {
-            // Call API login
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
-            });
+    setIsLoading(true);
 
-            const data = await response.json();
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+        });
 
-            if (data.success && data.user) {
-                // Simpan status login ke localStorage
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('username', data.user.username);
-                localStorage.setItem('name', data.user.name);
-                localStorage.setItem('role', data.user.role); // Role tersimpan di sini
+        const data = await response.json();
+
+        if (data.success && data.user) {
+            // ... simpan localStorage (kode Anda sudah benar) ...
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('username', data.user.username);
+            localStorage.setItem('name', data.user.name);
+            localStorage.setItem('role', data.user.role);
+            
+            setShowConfetti(true);
+            
+            setTimeout(() => {
+                console.log("Login Role:", data.user.role);
+
+                // --- BAGIAN INI DIPERBAIKI ---
+                if (data.user.role === 'approver') {
+                    // Ganti ini:
+                    // router.push('/konsumsi/approver'); 
+                    
+                    // Menjadi ini (Sesuai struktur folder pages/approver):
+                    router.push('/approver'); 
+                } else {
+                    router.push('/konsumsi');
+                }
+                // -----------------------------
                 
-                // Tampilkan konfeti
-                setShowConfetti(true);
-                
-                // Redirect PINTAR berdasarkan Role
-                setTimeout(() => {
-                    console.log("Login Role:", data.user.role); // Cek console browser Anda
+            }, 2000);
 
-                    // Jika role adalah approver, arahkan ke dashboard khusus
-                    if (data.user.role === 'approver') {
-                        router.push('/konsumsi/approver'); // Sesuaikan path folder Anda
-                    } else {
-                        // Jika user biasa, arahkan ke halaman utama/form
-                        router.push('/konsumsi'); // Sesuaikan path folder Anda
-                    }
-                }, 2000);
-
-            } else {
-                setError(data.error || 'Username atau password salah');
-                setIsLoading(false);
-            }
-        } catch (error) {
-            console.error('Login error:', error);
-            setError('Terjadi kesalahan. Silakan coba lagi.');
+        } else {
+            setError(data.error || 'Username atau password salah');
             setIsLoading(false);
         }
-    };
+    } catch (error) {
+        console.error('Login error:', error);
+        setError('Terjadi kesalahan. Silakan coba lagi.');
+        setIsLoading(false);
+    }
+};
     return (
         <>
             <Head>
