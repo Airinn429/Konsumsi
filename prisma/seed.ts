@@ -17,6 +17,7 @@ async function main() {
       email: "nadia@demplon.com",
       password: await hashPassword("123456"),
       role: "user",
+      bagianId: "Teknologi Informasi",
     },
     {
       username: "fauzi",
@@ -24,13 +25,14 @@ async function main() {
       email: "fauzi@demplon.com",
       password: await hashPassword("654321"),
       role: "user",
+      bagianId: "Pelayanan Umum",
     },
     {
       username: "dika",
       name: "Dika",
       email: "dika@demplon.com",
       password: await hashPassword("112233"),
-      role: "user",
+      role: "Manajemen & Pengembangan",
     },
      {
       username: "Riza Ilhamsyah",
@@ -38,6 +40,7 @@ async function main() {
       email: "riza@demplon.com",
       password: await hashPassword("12231149"),
       role: "user",
+      bagianId: "Teknologi Informasi",
     },
     {
       username: "Addnan",
@@ -45,6 +48,7 @@ async function main() {
       email: "addnan@demplon.com",
       password: await hashPassword("098765"),
       role: "Approver",
+      bagianId: "Pelayanan Umum",
     },
      {
       username: "Jojok Satriadi",
@@ -52,7 +56,16 @@ async function main() {
       email: "jojok@demplon.com",
       password: await hashPassword("12345"),
       role: "Approver",
-    }
+      bagianId: "Teknologi Informasi",
+    },
+     {
+      username: "Indra",
+      name: "Indra",
+      email: "indra@demplon.com",
+      password: await hashPassword("009988"),
+      role: "Approver",
+      bagianId: "Manajemen & Pengembangan",
+    },
   ];
 
   for (const u of users) {
