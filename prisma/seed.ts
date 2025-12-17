@@ -45,6 +45,13 @@ async function main() {
       email: "addnan@demplon.com",
       password: await hashPassword("098765"),
       role: "Approver",
+    },
+     {
+      username: "Jojok Satriadi",
+      name: "Jojok Satriadi",
+      email: "jojok@demplon.com",
+      password: await hashPassword("12345"),
+      role: "Approver",
     }
   ];
 
