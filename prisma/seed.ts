@@ -17,7 +17,6 @@ async function main() {
       email: "nadia@demplon.com",
       password: await hashPassword("123456"),
       role: "user",
-      bagianId: "Teknologi Informasi",
     },
     {
       username: "fauzi",
