@@ -73,7 +73,7 @@ async function main() {
   console.log("📋 Menambahkan bagian...");
 
   await prisma.bagian.createMany({
-    data: [{ id: randomUUID(), nama: "Teknologi Informasi" }, { id: randomUUID(), nama: "Manajemen & Pengembangan" }, { id: randomUUID(), nama: "Pelayanan Umum" }],
+    data: [{ id: randomUUID(), nama: "Teknologi Informasi" }],
     skipDuplicates: true
   });
 
