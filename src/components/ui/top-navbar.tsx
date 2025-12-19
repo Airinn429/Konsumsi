@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
-import { Menu, LogOut } from "lucide-react";
+import { Menu, LogOut, Bell } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -22,32 +23,52 @@ interface TopNavbarProps {
 export function TopNavbar({ isCollapsed = false, onToggleSidebar }: TopNavbarProps) {
   const router = useRouter();
   const [username, setUsername] = useState<string>("User");
+  const [pendingCount, setPendingCount] = useState<number>(0);
 
-  useEffect(() => {
-    // Load username from localStorage
+  // Fungsi untuk mengambil jumlah pesanan berstatus 'Pending'
+  const checkPendingOrders = useCallback(async () => {
     const savedUsername = localStorage.getItem('username');
-    if (savedUsername) {
-      setUsername(savedUsername);
+    if (!savedUsername) return;
+
+    try {
+      // Mengambil data dari API
+      const res = await fetch(`/api/orders?username=${encodeURIComponent(savedUsername)}&role=approver`);
+      if (res.ok) {
+        const data = await res.json();
+        const pending = data.filter((o: any) => o.status === 'Pending').length;
+        setPendingCount(pending);
+      }
+    } catch (error) {
+      console.error("Gagal memuat jumlah notifikasi:", error);
     }
   }, []);
 
+  useEffect(() => {
+    const savedUsername = localStorage.getItem('username');
+    if (savedUsername) setUsername(savedUsername);
+
+    // Jalankan pengecekan jika di halaman approver
+    if (router.pathname.startsWith('/approver')) {
+      checkPendingOrders();
+    }
+
+    // MENDENGARKAN SINYAL REFRESH DARI HALAMAN DASHBOARD
+    const handleRefresh = () => {
+      checkPendingOrders();
+    };
+
+    window.addEventListener('refresh-pending-count', handleRefresh);
+    return () => window.removeEventListener('refresh-pending-count', handleRefresh);
+  }, [router.pathname, checkPendingOrders]);
+
   const handleLogout = () => {
-    // Clear localStorage
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('username');
-    
-    // Redirect to login
     router.push('/login');
   };
 
-  // Get initials from username
   const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+    return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
   };
 
   return (
@@ -56,7 +77,6 @@ export function TopNavbar({ isCollapsed = false, onToggleSidebar }: TopNavbarPro
       style={{ left: isCollapsed ? '64px' : '256px' }}
     >
       <div className="h-full px-4 sm:px-6 flex items-center justify-between">
-        {/* Left Side - Hamburger Menu */}
         <Button
           variant="ghost"
           size="icon"
@@ -66,15 +86,32 @@ export function TopNavbar({ isCollapsed = false, onToggleSidebar }: TopNavbarPro
           <Menu className="h-6 w-6" />
         </Button>
 
-        {/* Right Side - User Info & Logout */}
         <div className="flex items-center gap-3">
+          {/* ikon lonceng */}
+          {router.pathname.startsWith('/approver') && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative text-slate-500 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-slate-800 rounded-full transition-all"
+            >
+              <motion.div
+                animate={pendingCount > 0 ? { rotate: [0, -15, 15, -15, 15, 0] } : {}}
+                transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 2 }}
+              >
+                <Bell className="h-5 w-5" />
+              </motion.div>
+
+              {pendingCount > 0 && (
+                <span className="absolute top-2.5 right-2.5 flex h-2 w-2">
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500 border border-white dark:border-slate-900"></span>
+                </span>
+              )}
+            </Button>
+          )}
+
           <div className="hidden sm:flex flex-col items-end">
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              {username}
-            </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              Online
-            </span>
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{username}</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-none">Online</span>
           </div>
           
           <DropdownMenu>
@@ -90,16 +127,11 @@ export function TopNavbar({ isCollapsed = false, onToggleSidebar }: TopNavbarPro
               <DropdownMenuLabel>
                 <div className="flex flex-col">
                   <span className="font-semibold">{username}</span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
-                    DEMPLON User
-                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">DEMPLON User</span>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={handleLogout}
-                className="text-red-600 dark:text-red-400 cursor-pointer"
-              >
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600 dark:text-red-400 cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Logout</span>
               </DropdownMenuItem>
@@ -110,4 +142,3 @@ export function TopNavbar({ isCollapsed = false, onToggleSidebar }: TopNavbarPro
     </nav>
   );
 }
-

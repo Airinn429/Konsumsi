@@ -31,8 +31,7 @@ export default async function handler(
         where: { id: id },
         data: {
           status: status,
-          // Update alasan jika ada (pastikan kolom 'alasanPenolakan' ada di schema.prisma Anda)
-          // Jika di schema namanya beda, sesuaikan di sini (misal: keterangan)
+          // Update alasan penolakan
         },
       });
 

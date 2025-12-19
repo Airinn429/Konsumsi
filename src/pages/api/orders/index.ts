@@ -103,9 +103,7 @@ export default async function handler(
     }
   }
 
-  // ----------------------------------------------------------------------
-  // HANDLER POST: Membuat Order Baru (Tidak Berubah)
-  // ----------------------------------------------------------------------
+  // HANDLER POST: Membuat Order Baru 
   if (req.method === 'POST') {
     try {
       const {
@@ -125,7 +123,6 @@ export default async function handler(
 
       console.log('📝 Creating order with data:', {
         kegiatan,
-        // ... log lainnya
         createdBy,
       });
 
