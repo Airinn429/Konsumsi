@@ -270,41 +270,38 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onV
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                <Command>
-                    <CommandInput 
-                        placeholder={searchPlaceholder} 
-                        autoComplete="off"
-                        spellCheck={false}
-                        data-form-type="other"
-                        data-lpignore="true" 
-                        data-1p-ignore="true"
-                    />
-                    
-                    <CommandList className="max-h-[240px] overflow-y-auto overflow-x-hidden p-1">
-                        <CommandEmpty className="py-6 text-center text-sm">{notFoundMessage}</CommandEmpty>
-                        
-                        {options.map((option) => (
-                            <CommandItem
-                                key={option}
-                                value={option}
-                                onSelect={(currentValue : string) => {
-                                    onValueChange(currentValue === value ? "" : currentValue);
-                                    setOpen(false);
-                                }}
-                            >
-                                <Check
-                                    className={cn(
-                                        "mr-2 h-4 w-4",
-                                        value.toLowerCase() === option.toLowerCase() ? "opacity-100" : "opacity-0"
-                                    )}
-                                />
-                                {option}
-                            </CommandItem>
-                        ))}
-                    </CommandList>
-                </Command>
-            </PopoverContent>
+           <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+    <Command className="flex flex-col">
+        <CommandInput placeholder={searchPlaceholder} className="h-9" />
+        
+        {/* PERBAIKAN: Gunakan max-h dan hilangkan overflow-x */}
+        <CommandList className="max-h-[250px] overflow-y-auto overflow-x-hidden scrollbar-thin">
+            <CommandEmpty className="py-6 text-center text-sm">
+                {notFoundMessage}
+            </CommandEmpty>
+            <CommandGroup>
+                {options.map((option: string) => (
+                    <CommandItem
+                        key={option}
+                        value={option}
+                        onSelect={(currentValue) => {
+                            onValueChange(currentValue);
+                            setOpen(false);
+                        }}
+                    >
+                        <Check
+                            className={cn(
+                                "mr-2 h-4 w-4",
+                                value.toLowerCase() === option.toLowerCase() ? "opacity-100" : "opacity-0"
+                            )}
+                        />
+                        {option}
+                    </CommandItem>
+                ))}
+            </CommandGroup>
+        </CommandList>
+    </Command>
+</PopoverContent>
         </Popover>
     );
 };
@@ -915,14 +912,14 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                     </CardDescription>
                     
                     {!isSuccessful && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
                             <div className="bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-950/50 dark:to-violet-900/50 p-4 rounded-lg border border-violet-200 dark:border-violet-800">
                                 <div className="flex items-start gap-3">
-                                    <div className="p-2 bg-white dark:bg-violet-900 rounded-lg">
+                                    <div className="p-1 bg-white dark:bg-violet-900 rounded-lg">
                                         <div className="p-2 bg-white dark:bg-violet-900 rounded-lg shrink-0 flex items-center justify-center">
                                         <IoIosInformationCircleOutline className="w-6 h-6 text-violet-600 dark:text-violet-400" />                                        </div>
                                     </div>
-                                    <div className="flex-1">
+                                    <div className="flex-4">
                                         <h3 className="font-semibold text-violet-900 dark:text-violet-100 mb-2">Informasi Order</h3>
                                         <ul className="space-y-1 text-sm text-violet-700 dark:text-violet-300">
                                             <li>• Order dilakukan minimal H-1 kegiatan</li>
@@ -934,11 +931,11 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                             
                             <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/50 dark:to-amber-900/50 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
                                 <div className="flex items-start gap-3">
-                                    <div className="p-2 bg-white dark:bg-amber-900 rounded-lg">
+                                    <div className="p-1 bg-white dark:bg-amber-900 rounded-lg">
                                         <div className="p-2 bg-white dark:bg-violet-900 rounded-lg shrink-0 flex items-center justify-center">
-                                        <IoWarningOutline className="w-10 h-10 text-amber-600 dark:text-amber-400" />                                        </div>
+                                        <IoWarningOutline className="w-6 h-6 text-amber-600 dark:text-amber-400" />                                        </div>
                                     </div>
-                                    <div className="flex-1">
+                                    <div className="flex-4">
                                         <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">Informasi Transaksi</h3>
                                         <p className="text-sm text-amber-700 dark:text-amber-300">
                                             Informasi untuk pemesanan order wajib di approve oleh approval
@@ -1002,7 +999,7 @@ const OrderFormContent: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                                     <div className="flex justify-between items-center">
                                         <h4 className="text-lg font-semibold text-violet-700 dark:text-violet-400">Informasi Umum & Pemesan</h4>
                                     </div>
-                                    <div className="space-y-2 overflow-y-auto max-h-[100vh] scrollbar-thin">                                          
+                                    <div className="space-y-2 overflow-y-auto max-h-[60vh] pr-2 scrollbar-thin">                                          
                                         <SearchableSelect
                                             value={formData.kegiatan}
                                             onValueChange={(value) => handleChange('kegiatan', value)}

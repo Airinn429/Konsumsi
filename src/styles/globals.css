@@ -160,36 +160,27 @@ a {
     @apply bg-background text-foreground;
   }
 }
-
-/* Hide Scrollbar but keep scroll functionality */
+/* GANTI kode .scrollbar-thin Anda dengan ini */
 .scrollbar-thin {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgb(203 213 225) transparent; /* Firefox: thumb & track */
 }
 
+/* Chrome, Safari, Edge */
 .scrollbar-thin::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  width: 6px; /* Membuat scrollbar tipis */
+  display: block; /* Pastikan muncul */
 }
 
-/* These classes are kept for backwards compatibility but have no effect */
-.scrollbar-track-transparent::-webkit-scrollbar-track {
+.scrollbar-thin::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.scrollbar-thumb-slate-300::-webkit-scrollbar-thumb {
-  background: rgb(203 213 225);
-  border-radius: 3px;
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(203 213 225); /* Warna slate-300 */
+  border-radius: 20px;
 }
 
-.scrollbar-thumb-slate-300::-webkit-scrollbar-thumb:hover {
-  background: rgb(148 163 184);
-}
-
-.dark .scrollbar-thumb-slate-700::-webkit-scrollbar-thumb {
-  background: rgb(51 65 85);
-  border-radius: 3px;
-}
-
-.dark .scrollbar-thumb-slate-700::-webkit-scrollbar-thumb:hover {
-  background: rgb(71 85 105);
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(51 65 85); /* Warna slate-700 untuk mode dark */
 }
